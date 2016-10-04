@@ -12,7 +12,7 @@
          stopOnFailure="false">
 
     <testsuites>
-        <testsuite name="Uri Test Suite">
+        <testsuite name="Uri Parser Test Suite">
             <directory>test</directory>
         </testsuite>
     </testsuites>

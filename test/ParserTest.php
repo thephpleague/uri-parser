@@ -1,24 +1,24 @@
 <?php
 
-namespace League\Uri\Test;
+namespace LeagueTest\Uri;
 
 use InvalidArgumentException;
-use League\Uri\UriParser;
+use League\Uri\Parser;
 use PHPUnit_Framework_TestCase;
 
 /**
  * @group parser
  */
-class UriParserTest extends PHPUnit_Framework_TestCase
+class ParserTest extends PHPUnit_Framework_TestCase
 {
     /**
-     * @var UriParser
+     * @var Parser
      */
     protected $parser;
 
     protected function setUp()
     {
-        $this->parser = new UriParser();
+        $this->parser = new Parser();
     }
 
     /**
@@ -138,6 +138,32 @@ class UriParserTest extends PHPUnit_Framework_TestCase
                     'fragment' => 'fragment',
                 ],
             ],
+            'URI with host IP' => [
+                'scheme://10.0.0.2/p?q#f',
+                [
+                    'scheme' => 'scheme',
+                    'user' => null,
+                    'pass' => null,
+                    'host' => '10.0.0.2',
+                    'port' => null,
+                    'path' => '/p',
+                    'query' => 'q',
+                    'fragment' => 'f',
+                ],
+            ],
+            'URI with scoped IP' => [
+                'scheme://[fe80:1234::%251]/p?q#f',
+                [
+                    'scheme' => 'scheme',
+                    'user' => null,
+                    'pass' => null,
+                    'host' => '[fe80:1234::%251]',
+                    'port' => null,
+                    'path' => '/p',
+                    'query' => 'q',
+                    'fragment' => 'f',
+                ],
+            ],
             'URI without authority' => [
                 'scheme:path?query#fragment',
                 [
@@ -230,14 +256,14 @@ class UriParserTest extends PHPUnit_Framework_TestCase
                 ],
             ],
             'URI without fragment' => [
-                'scheme:path',
+                'tel:05000',
                 [
-                    'scheme' => 'scheme',
+                    'scheme' => 'tel',
                     'user' => null,
                     'pass' => null,
                     'host' => null,
                     'port' => null,
-                    'path' => 'path',
+                    'path' => '05000',
                     'query' => null,
                     'fragment' => null,
                 ],
@@ -294,19 +320,6 @@ class UriParserTest extends PHPUnit_Framework_TestCase
                     'fragment' => '',
                 ],
             ],
-            'URI without scheme but a path' => [
-                '2620:0:1cfe:face:b00c::3',
-                [
-                    'scheme' => null,
-                    'user' => null,
-                    'pass' => null,
-                    'host' => null,
-                    'port' => null,
-                    'path' => '2620:0:1cfe:face:b00c::3',
-                    'query' => null,
-                    'fragment' => null,
-                ],
-            ],
             'relative path' => [
                 '../relative/path',
                 [
@@ -359,17 +372,17 @@ class UriParserTest extends PHPUnit_Framework_TestCase
                     'fragment' => null,
                 ],
             ],
-            'invalid scheme' => [
-                '0scheme://host/path?query#fragment',
+            'fragment with pseudo segment' => [
+                'http://example.com#foo=1/bar=2',
                 [
-                    'scheme' => null,
+                    'scheme' => 'http',
                     'user' => null,
                     'pass' => null,
-                    'host' => null,
+                    'host' => 'example.com',
                     'port' => null,
-                    'path' => '0scheme://host/path',
-                    'query' => 'query',
-                    'fragment' => 'fragment',
+                    'path' => '',
+                    'query' => null,
+                    'fragment' => 'foo=1/bar=2',
                 ],
             ],
         ];
@@ -391,8 +404,14 @@ class UriParserTest extends PHPUnit_Framework_TestCase
         return [
             'invalid port' => ['scheme://host:port/path?query#fragment'],
             'invalid host' => ['scheme://[127.0.0.1]/path?query#fragment'],
+            'invalid ipv6 scoped 1' => ['scheme://[::1%25%23]/path?query#fragment'],
+            'invalid ipv6 scoped 2' => ['scheme://[fe80::1234::%251]/path?query#fragment'],
             'invalid ipv6 host' => ['scheme://[::1]./path?query#fragment'],
             'invalid host too long' => ['scheme://'.implode('.', array_fill(0, 128, 'a'))],
+            'invalid char on URI' => ["scheme://host/path/\r\n/toto"],
+            'invalid host and URI' => ['2620:0:1cfe:face:b00c::3'],
+            'invalid scheme and path' => ['0scheme://host/path?query#fragment'],
+            'invalid path PHP bug #72811' => ['[::1]:80'],
         ];
     }
 }

@@ -8,7 +8,7 @@ _(In case of a bug report Please complete the table below)_
 
 | Information | Description |
 |--------------|---------|
-| League\Uri version |  |
+| league-uri-parser version |  |
 | PHP/HHVM version |  |
 | OS Platform |  |
 
