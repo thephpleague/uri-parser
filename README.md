@@ -1,6 +1,9 @@
 League Uri Parser
 =======
 
+[![Build Status](https://img.shields.io/travis/thephpleague/uri/master.svg?style=flat-square)](https://travis-ci.org/thephpleague/uri-parser)
+[![Latest Version](https://img.shields.io/github/release/thephpleague/uri-parser.svg?style=flat-square)](https://github.com/thephpleague/uri-parser/releases)
+
 This package contains a userland PHP uri parser compliant with [RFC 3986](http://tools.ietf.org/html/rfc3986).
 
 System Requirements
