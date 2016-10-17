@@ -385,6 +385,19 @@ class ParserTest extends PHPUnit_Framework_TestCase
                     'fragment' => 'foo=1/bar=2',
                 ],
             ],
+            'empty string' => [
+                '',
+                [
+                    'scheme' => null,
+                    'user' => null,
+                    'pass' => null,
+                    'host' => null,
+                    'port' => null,
+                    'path' => '',
+                    'query' => null,
+                    'fragment' => null,
+                ],
+            ],
         ];
     }
 
@@ -406,7 +419,8 @@ class ParserTest extends PHPUnit_Framework_TestCase
             'invalid host' => ['scheme://[127.0.0.1]/path?query#fragment'],
             'invalid ipv6 scoped 1' => ['scheme://[::1%25%23]/path?query#fragment'],
             'invalid ipv6 scoped 2' => ['scheme://[fe80::1234::%251]/path?query#fragment'],
-            'invalid ipv6 host' => ['scheme://[::1]./path?query#fragment'],
+            'invalid ipv6 host 1' => ['scheme://[::1]./path?query#fragment'],
+            'invalid ipv6 host 2' => ['scheme://[[::1]]:80/path?query#fragment'],
             'invalid host too long' => ['scheme://'.implode('.', array_fill(0, 128, 'a'))],
             'invalid char on URI' => ["scheme://host/path/\r\n/toto"],
             'invalid host and URI' => ['2620:0:1cfe:face:b00c::3'],

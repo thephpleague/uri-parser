@@ -24,28 +24,39 @@ use InvalidArgumentException;
  */
 final class Parser
 {
-    const REGEXP_INVALID_URI_CHAR = ',[\x0-\x1F|\x7F],';
-    const REGEXP_INVALID_USER = ',[/?#@:],';
-    const REGEXP_INVALID_PASS = ',[/?#@],';
-    const REGEXP_INVALID_IP_SCOPED = ',[^\x20-\x7F]|[?#@\[\]],';
+    use HostValidation;
+
+    const INVALID_URI_CHARS = "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1A\x1B\x1C\x1D\x1E\x1F\x7F";
+
     const REGEXP_URI = ',^
-        ((?<scheme>[^:/?\#]+):)?    # URI scheme component
-        (?<authority>//([^/?\#]*))? # URI authority part
-        (?<path>[^?\#]*)            # URI path component
-        (?<query>\?([^\#]*))?       # URI query component
-        (?<fragment>\#(.*))?        # URI fragment component
+        (?<scheme>(?<scontent>[a-zA-Z]([-a-zA-Z0-9+.]+)):)? # URI scheme component
+        (?<authority>//(?<acontent>                         # URI authority part
+            (?<userinfo>                                    # URI userinfo component
+                (?<user>[^:@]*)?                            # URI user component
+                (\:(?<pass>[^@]*))?                         # URI pass component
+            @)?
+            (?<host>(\[.*\]|[^:/?\#])*)                     # URI host component
+            (\:(?<port>[^/?\#]*))?                          # URI port component
+        ))?
+        (?<path>[^?\#]*)                                    # URI path component
+        (?<query>\?(?<qcontent>[^\#]*))?                    # URI query component
+        (?<fragment>\#(?<fcontent>.*))?                     # URI fragment component
     ,x';
-    const REGEXP_SCHEME = ',^([a-z]([-a-z0-9+.]+)?)?$,i';
-    const REGEXP_AUTHORITY = ',^(?<userinfo>(?<ucontent>.*?)@)?(?<hostname>.*?)?$,';
-    const REGEXP_REVERSE_HOSTNAME = ',^((?<port>[^(\[\])]*):)?(?<host>.*)?$,';
-    const REGEXP_HOST_IPV6 = ',^\[(?P<ipv6>.*?)\]$,';
-    const REGEXP_HOST_LABEL = '/^[0-9a-z]([0-9a-z-]{0,61}[0-9a-z])?$/i';
-    const PORT_MINIMUM = 1;
-    const PORT_MAXIMUM = 65535;
+
     const LOCAL_LINK_PREFIX = '1111111010';
 
     /**
-     * Parse a string as an URI according to the regexp form rfc3986
+     * Default URI components
+     *
+     * @var array
+     */
+    private static $components = [
+        'scheme' => null, 'user' => null, 'pass' => null, 'host' => null,
+        'port' => null, 'path' => '', 'query' => null, 'fragment' => null,
+    ];
+
+    /**
+     * Split an URI string into its component
      *
      * @param string $uri
      *
@@ -53,114 +64,125 @@ final class Parser
      */
     public function __invoke($uri)
     {
-        $parts = $this->extractUriParts($uri);
-        if (!$this->isValidUri($parts)) {
-            throw new InvalidArgumentException(sprintf('Invalid Uri `%s`', $uri));
-        }
-
-        $auth = $this->parseAuthority($parts['authority']);
-
-        return [
-            'scheme' => '' === $parts['scheme'] ? null : $parts['scheme'],
-            'user' => $auth['user'],
-            'pass' => $auth['pass'],
-            'host' => $auth['host'],
-            'port' => $auth['port'],
-            'path' => $parts['path'],
-            'query' => '' === $parts['query'] ? null : mb_substr($parts['query'], 1, null, 'UTF-8'),
-            'fragment' => '' === $parts['fragment'] ? null : mb_substr($parts['fragment'], 1, null, 'UTF-8'),
-        ];
-    }
-
-    /**
-     * Extract URI parts
-     *
-     * @see http://tools.ietf.org/html/rfc3986#appendix-B
-     *
-     * @param string $uri The URI to split
-     *
-     * @return string[]
-     */
-    private function extractUriParts($uri)
-    {
-        if (preg_match(self::REGEXP_INVALID_URI_CHAR, $uri)) {
-            throw new InvalidArgumentException(sprintf('Invalid Uri `%s` contains invalid characters', $uri));
-        }
-
-        preg_match(self::REGEXP_URI, $uri, $parts);
-        $parts += ['query' => '', 'fragment' => ''];
-
-        if (preg_match(self::REGEXP_SCHEME, $parts['scheme'])) {
+        $parts = $this->simpleExtract($uri);
+        if (!empty($parts)) {
             return $parts;
         }
 
-        $parts['path'] = $parts['scheme'].':'.$parts['authority'].$parts['path'];
-        $parts['scheme'] = '';
-        $parts['authority'] = '';
-
-        return $parts;
+        return $this->complexExtract($uri);
     }
 
-    private function isValidUri(array $components)
+    /**
+     * URI easy parsing with non complex URI
+     *
+     * Simplify parsing simple URI
+     *
+     * @param string $uri the URI string to parse
+     *
+     * @throws InvalidArgumentException If the URI contains invalid characters
+     *
+     * @return array
+     */
+    private function simpleExtract($uri)
     {
-        if ('' != $components['authority']) {
-            return '' === $components['path'] || strpos($components['path'], '/') === 0;
+        if ('' === $uri) {
+            return self::$components;
         }
 
-        if ('' != $components['scheme'] || false === ($pos = strpos($components['path'], ':'))) {
+        if (strlen($uri) !== strcspn($uri, self::INVALID_URI_CHARS)) {
+            throw new InvalidArgumentException(sprintf('Invalid Uri `%s` contains invalid characters', $uri));
+        }
+
+        $first_char = $uri[0];
+        if ('#' === $first_char) {
+            return array_merge(self::$components, ['fragment' => substr($uri, 1)]);
+        }
+
+        if ('?' === $first_char) {
+            $components = explode('#', substr($uri, 1), 2);
+            return array_merge(self::$components, [
+                'query' => array_shift($components),
+                'fragment' =>  array_shift($components),
+            ]);
+        }
+
+        return [];
+    }
+
+    /**
+     * URI complex parsing using Regular expression
+     *
+     * @param string $uri the URI string to parse
+     *
+     * @throws InvalidArgumentException If the URI is not valid
+     *
+     * @return array
+     */
+    private function complexExtract($uri)
+    {
+        preg_match(self::REGEXP_URI, $uri, $parts);
+        $parts += ['scheme' => '', 'authority' => '', 'path' => '', 'query' => '', 'fragment' => ''];
+        if ($this->isValidUriParts($parts)) {
+            return $this->formatParts($parts);
+        }
+
+        throw new InvalidArgumentException(sprintf('Invalid Uri `%s` contains invalid URI parts', $uri));
+    }
+
+    /**
+     * Validate the URI againts RFC3986 rules
+     *
+     * @param array $parts URI parts
+     *
+     * @return bool
+     */
+    private function isValidUriParts(array $parts)
+    {
+        if ('' != $parts['authority']) {
+            return '' === $parts['path'] || strpos($parts['path'], '/') === 0;
+        }
+
+        if ('' != $parts['scheme'] || false === ($pos = strpos($parts['path'], ':'))) {
             return true;
         }
 
-        return false !== strpos(substr($components['path'], 0, $pos), '/');
+        return false !== strpos(substr($parts['path'], 0, $pos), '/');
     }
 
     /**
-     * Parse a URI authority part into its components
+     * Normalize URI parts to return an array similar to parse_url
      *
-     * @param string $authority
-     *
-     * @return array
-     */
-    private function parseAuthority($authority)
-    {
-        if ('' === $authority) {
-            return ['user' => null, 'pass' => null, 'host' => null, 'port' => null];
-        }
-
-        $content = mb_substr($authority, 2, null, 'UTF-8');
-        if ('' === $content) {
-            return ['user' => null, 'pass' => null, 'host' => '', 'port' => null];
-        }
-
-        $res = [];
-        preg_match(self::REGEXP_AUTHORITY, $content, $auth);
-        if ('' !== $auth['userinfo']) {
-            $userinfo = explode(':', $auth['ucontent'], 2);
-            $res = ['user' => array_shift($userinfo), 'pass' => array_shift($userinfo)];
-        }
-
-        return $this->parseHostname($auth['hostname']) + $res + ['user' => null, 'pass' => null];
-    }
-
-    /**
-     * Parse the hostname into its components Host and Port
-     *
-     * No validation is done on the port or host component found
-     *
-     * @param string $hostname
+     * @param array $parts URI parts
      *
      * @return array
      */
-    private function parseHostname($hostname)
+    private function formatParts(array $parts)
     {
-        $components = ['host' => null, 'port' => null];
-        $hostname = strrev($hostname);
-        if (preg_match(self::REGEXP_REVERSE_HOSTNAME, $hostname, $res)) {
-            $components['port'] = strrev($res['port']);
-            $components['host'] = strrev($res['host']);
+        $components = self::$components;
+        $components['scheme'] = ('' !== $parts['scheme']) ? $parts['scontent'] : null;
+        $components['query']  = ('' !== $parts['query']) ? $parts['qcontent'] : null;
+        $components['fragment'] = ('' !== $parts['fragment']) ? $parts['fcontent'] : null;
+        $components['path'] = $parts['path'];
+
+        if ('' === $parts['authority']) {
+            return $components;
         }
-        $components['port'] = $this->filterPort($components['port']);
-        $components['host'] = $this->filterHost($components['host']);
+
+        if ('' === $parts['acontent']) {
+            $components['host'] = '';
+            return $components;
+        }
+
+        $components['port'] = $this->filterPort($parts['port']);
+        $components['host'] = $this->filterHost($parts['host']);
+        if ('' === $parts['userinfo']) {
+            return $components;
+        }
+
+        $components['user'] = $parts['user'];
+        if ('' !== $parts['user']) {
+            $components['pass'] = $parts['pass'];
+        }
 
         return $components;
     }
@@ -176,100 +198,15 @@ final class Parser
      */
     private function filterPort($port)
     {
-        if (in_array($port, [null, ''])) {
+        if ('' === $port) {
             return null;
         }
 
-        $port = filter_var($port, FILTER_VALIDATE_INT, ['options' => [
-            'min_range' => self::PORT_MINIMUM,
-            'max_range' => self::PORT_MAXIMUM,
-        ]]);
-
+        $port = filter_var($port, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 65535]]);
         if ($port) {
             return $port;
         }
 
         throw new InvalidArgumentException('The submitted port is invalid');
-    }
-
-    /**
-     * validate the host component
-     *
-     * @param string $host
-     *
-     * @throws InvalidArgumentException If the host component is invalid
-     *
-     * @return string
-     */
-    private function filterHost($host)
-    {
-        if ($this->isValidHostname($host) || $this->isValidIpv6Host($host)) {
-            return $host;
-        }
-
-        throw new InvalidArgumentException('The submitted host is invalid');
-    }
-
-    /**
-     * validate and filter a Ipv6 Hostname
-     *
-     * @see http://tools.ietf.org/html/rfc6874#section-2
-     * @see http://tools.ietf.org/html/rfc6874#section-4
-     *
-     * @param string $str
-     *
-     * @return string|false
-     */
-    private function isValidIpv6Host($str)
-    {
-        if (!preg_match(self::REGEXP_HOST_IPV6, $str, $matches)) {
-            return false;
-        }
-
-        if (false === ($pos = strpos($matches['ipv6'], '%'))) {
-            return (bool) filter_var($matches['ipv6'], FILTER_VALIDATE_IP, FILTER_FLAG_IPV6);
-        }
-
-        if (preg_match(self::REGEXP_INVALID_IP_SCOPED, rawurldecode(substr($matches['ipv6'], $pos)))) {
-            return false;
-        }
-
-        $ipv6 = substr($matches['ipv6'], 0, $pos);
-        if (!filter_var($ipv6, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
-            return false;
-        }
-
-        $convert = function ($carry, $char) {
-            return $carry.str_pad(decbin(ord($char)), 8, '0', STR_PAD_LEFT);
-        };
-        $res = array_reduce(str_split(unpack('A16', inet_pton($ipv6))[1]), $convert, '');
-
-        return substr($res, 0, 10) === self::LOCAL_LINK_PREFIX;
-    }
-
-    /**
-     * Validate a string only host
-     *
-     * @param string $str
-     *
-     * @return array
-     */
-    private function isValidHostname($host)
-    {
-        if ('.' === mb_substr($host, -1, 1, 'UTF-8')) {
-            $host = mb_substr($host, 0, -1, 'UTF-8');
-        }
-
-        $labels = array_map(function ($value) {
-            return idn_to_ascii($value);
-        }, explode('.', $host));
-
-        $verifs = array_filter($labels, function ($value) {
-            return '' !== trim($value);
-        });
-
-        return $verifs === $labels
-            && 127 > count($labels)
-            && empty(preg_grep(self::REGEXP_HOST_LABEL, $labels, PREG_GREP_INVERT));
     }
 }
