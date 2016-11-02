@@ -2,14 +2,14 @@
 
 namespace LeagueTest\Uri;
 
-use InvalidArgumentException;
 use League\Uri\Parser;
-use PHPUnit_Framework_TestCase;
+use League\Uri\ParserException;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @group parser
  */
-class ParserTest extends PHPUnit_Framework_TestCase
+class ParserTest extends TestCase
 {
     /**
      * @var Parser
@@ -73,6 +73,20 @@ class ParserTest extends PHPUnit_Framework_TestCase
                     'fragment' => 'fragment',
                 ],
             ],
+            'URI without empty authority only' => [
+                '//',
+                [
+                    'scheme' => null,
+                    'user' => null,
+                    'pass' => null,
+                    'host' => '',
+                    'port' => null,
+                    'path' => '',
+                    'query' => null,
+                    'fragment' => null,
+                ],
+            ],
+
             'URI without userinfo' => [
                 'scheme://HoSt:81/path?query#fragment',
                 [
@@ -203,6 +217,19 @@ class ParserTest extends PHPUnit_Framework_TestCase
                     'fragment' => 'fragment',
                 ],
             ],
+            'URI with empty host and without scheme' => [
+                '///path?query#fragment',
+                [
+                    'scheme' => null,
+                    'user' => null,
+                    'pass' => null,
+                    'host' => '',
+                    'port' => null,
+                    'path' => '/path',
+                    'query' => 'query',
+                    'fragment' => 'fragment',
+                ],
+            ],
             'URI without path' => [
                 'scheme://[FEDC:BA98:7654:3210:FEDC:BA98:7654:3210]?query#fragment',
                 [
@@ -216,7 +243,46 @@ class ParserTest extends PHPUnit_Framework_TestCase
                     'fragment' => 'fragment',
                 ],
             ],
-            'URI without query' => [
+            'URI without path and scheme' => [
+                '//[FEDC:BA98:7654:3210:FEDC:BA98:7654:3210]?query#fragment',
+                [
+                    'scheme' => null,
+                    'user' => null,
+                    'pass' => null,
+                    'host' => '[FEDC:BA98:7654:3210:FEDC:BA98:7654:3210]',
+                    'port' => null,
+                    'path' => '',
+                    'query' => 'query',
+                    'fragment' => 'fragment',
+                ],
+            ],
+            'URI without scheme with IPv6 host and port' => [
+                '//[FEDC:BA98:7654:3210:FEDC:BA98:7654:3210]:42?query#fragment',
+                [
+                    'scheme' => null,
+                    'user' => null,
+                    'pass' => null,
+                    'host' => '[FEDC:BA98:7654:3210:FEDC:BA98:7654:3210]',
+                    'port' => 42,
+                    'path' => '',
+                    'query' => 'query',
+                    'fragment' => 'fragment',
+                ],
+            ],
+            'complete URI without scheme' => [
+                '//user@[FEDC:BA98:7654:3210:FEDC:BA98:7654:3210]:42?q#f',
+                [
+                    'scheme' => null,
+                    'user' => 'user',
+                    'pass' => null,
+                    'host' => '[FEDC:BA98:7654:3210:FEDC:BA98:7654:3210]',
+                    'port' => 42,
+                    'path' => '',
+                    'query' => 'q',
+                    'fragment' => 'f',
+                ],
+            ],
+            'URI without authority and query' => [
                 'scheme:path#fragment',
                 [
                     'scheme' => 'scheme',
@@ -294,6 +360,19 @@ class ParserTest extends PHPUnit_Framework_TestCase
                     'fragment' => 'fragment',
                 ],
             ],
+            'URI with empty fragment only' => [
+                '#',
+                [
+                    'scheme' => null,
+                    'user' => null,
+                    'pass' => null,
+                    'host' => null,
+                    'port' => null,
+                    'path' => '',
+                    'query' => null,
+                    'fragment' => '',
+                ],
+            ],
             'URI without authority 2' => [
                 'path#fragment',
                 [
@@ -307,7 +386,7 @@ class ParserTest extends PHPUnit_Framework_TestCase
                     'fragment' => 'fragment',
                 ],
             ],
-            'URI with emtpy query and fragment' => [
+            'URI with empty query and fragment' => [
                 '?#',
                 [
                     'scheme' => null,
@@ -318,6 +397,58 @@ class ParserTest extends PHPUnit_Framework_TestCase
                     'path' => '',
                     'query' => '',
                     'fragment' => '',
+                ],
+            ],
+            'URI with absolute path' => [
+                '/?#',
+                [
+                    'scheme' => null,
+                    'user' => null,
+                    'pass' => null,
+                    'host' => null,
+                    'port' => null,
+                    'path' => '/',
+                    'query' => '',
+                    'fragment' => '',
+                ],
+            ],
+            'URI with absolute authority' => [
+                'https://thephpleague.com./p?#f',
+                [
+                    'scheme' => 'https',
+                    'user' => null,
+                    'pass' => null,
+                    'host' => 'thephpleague.com.',
+                    'port' => null,
+                    'path' => '/p',
+                    'query' => '',
+                    'fragment' => 'f',
+                ],
+            ],
+            'URI with absolute path only' => [
+                '/',
+                [
+                    'scheme' => null,
+                    'user' => null,
+                    'pass' => null,
+                    'host' => null,
+                    'port' => null,
+                    'path' => '/',
+                    'query' => null,
+                    'fragment' => null,
+                ],
+            ],
+            'URI with empty query only' => [
+                '?',
+                [
+                    'scheme' => null,
+                    'user' => null,
+                    'pass' => null,
+                    'host' => null,
+                    'port' => null,
+                    'path' => '',
+                    'query' => '',
+                    'fragment' => null,
                 ],
             ],
             'relative path' => [
@@ -346,6 +477,19 @@ class ParserTest extends PHPUnit_Framework_TestCase
                     'fragment' => null,
                 ],
             ],
+            'complex authority without scheme' => [
+                '//a_.!~*\'(-)n0123Di%25%26:pass;:&=+$,word@www.zend.com',
+                [
+                    'scheme' => null,
+                    'user' => 'a_.!~*\'(-)n0123Di%25%26',
+                    'pass' => 'pass;:&=+$,word',
+                    'host' => 'www.zend.com',
+                    'port' => null,
+                    'path' => '',
+                    'query' => null,
+                    'fragment' => null,
+                ],
+            ],
             'single word is a path' => [
                 'http',
                 [
@@ -355,6 +499,19 @@ class ParserTest extends PHPUnit_Framework_TestCase
                     'host' => null,
                     'port' => null,
                     'path' => 'http',
+                    'query' => null,
+                    'fragment' => null,
+                ],
+            ],
+            'URI scheme with an empty authority' => [
+                'http://',
+                [
+                    'scheme' => 'http',
+                    'user' => null,
+                    'pass' => null,
+                    'host' => '',
+                    'port' => null,
+                    'path' => '',
                     'query' => null,
                     'fragment' => null,
                 ],
@@ -398,24 +555,50 @@ class ParserTest extends PHPUnit_Framework_TestCase
                     'fragment' => null,
                 ],
             ],
+            'complex URI' => [
+                'htà+d/s:totot',
+                [
+                    'scheme' => null,
+                    'user' => null,
+                    'pass' => null,
+                    'host' => null,
+                    'port' => null,
+                    'path' => 'htà+d/s:totot',
+                    'query' => null,
+                    'fragment' => null,
+                ],
+            ],
+            'scheme only URI' => [
+                'http:',
+                [
+                    'scheme' => 'http',
+                    'user' => null,
+                    'pass' => null,
+                    'host' => null,
+                    'port' => null,
+                    'path' => '',
+                    'query' => null,
+                    'fragment' => null,
+                ],
+            ],
         ];
     }
 
     /**
      * @dataProvider testInvalidURI
-     * @expectedException InvalidArgumentException
-     *
      * @param string $uri
      */
     public function testParseFailed($uri)
     {
+        $this->setExpectedException(ParserException::class);
         $this->parser->__invoke($uri);
     }
 
     public function testInvalidURI()
     {
         return [
-            'invalid port' => ['scheme://host:port/path?query#fragment'],
+            'invalid uri with incomplete scheme' => ['://host:80/p?q#f'],
+            'invalid port' => ['//host:port/path?query#fragment'],
             'invalid host' => ['scheme://[127.0.0.1]/path?query#fragment'],
             'invalid ipv6 scoped 1' => ['scheme://[::1%25%23]/path?query#fragment'],
             'invalid ipv6 scoped 2' => ['scheme://[fe80::1234::%251]/path?query#fragment'],
@@ -426,6 +609,7 @@ class ParserTest extends PHPUnit_Framework_TestCase
             'invalid host and URI' => ['2620:0:1cfe:face:b00c::3'],
             'invalid scheme and path' => ['0scheme://host/path?query#fragment'],
             'invalid path PHP bug #72811' => ['[::1]:80'],
+            'invalid uri with authority without host' => ['//user@:80'],
         ];
     }
 }

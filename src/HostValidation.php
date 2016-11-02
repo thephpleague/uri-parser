@@ -26,6 +26,8 @@ trait HostValidation
 {
     protected static $starting_label_chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
+    protected static $local_link_prefix = '1111111010';
+
     /**
      * validate the host component
      *
@@ -51,7 +53,7 @@ trait HostValidation
             return $host;
         }
 
-        throw new InvalidArgumentException(sprintf('The submitted host `%s` is invalid', $host));
+        throw ParserException::createFromInvalidHost($host);
     }
 
     /**
@@ -91,7 +93,7 @@ trait HostValidation
 
         $res = array_reduce(str_split(unpack('A16', inet_pton($ipv6))[1]), $reducer, '');
 
-        return substr($res, 0, 10) === self::LOCAL_LINK_PREFIX;
+        return substr($res, 0, 10) === self::$local_link_prefix;
     }
 
     /**

@@ -35,27 +35,27 @@ This is a drop-in replacement to PHP's `parse_url` function, with the following 
 use League\Uri\Parser;
 
 $parser = new Parser();
-var_dump($parser('http://foo.com?@bar.com/'));
+var_export($parser('http://foo.com?@bar.com/'));
 //returns the following array
-//[
-//    'scheme' => 'http',
-//    'user' => null,
-//    'pass' => null,
-//    'host' => 'foo.com',
-//    'port' => null,
-//    'path' => '',
-//    'query' => '@bar.com/',
-//    'fragment' => null,
-//];
+//array(
+//  'scheme' => 'http',
+//  'user' => null,
+//  'pass' => null,
+//  'host' => 'foo.com',
+//  'port' => null,
+//  'path' => '',
+//  'query' => '@bar.com/',
+//  'fragment' => null,
+//);
 
-var_dump(parse_url('http://foo.com?@bar.com/'));
+var_export(parse_url('http://foo.com?@bar.com/'));
 //returns the following array
-//[
-//    'scheme' => 'http',
-//    'host' => 'bar.com',
-//    'user' => 'foo.com?',
-//    'path' => '/',
-//];
+//array(
+//  'scheme' => 'http',
+//  'host' => 'bar.com',
+//  'user' => 'foo.com?',
+//  'path' => '/',
+//);
 ```
 
 - The `Parser::__invoke` method always returns all URI components.
@@ -66,26 +66,26 @@ var_dump(parse_url('http://foo.com?@bar.com/'));
 use League\Uri\Parser;
 
 $parser = new Parser();
-var_dump($parser('http://www.example.com/'));
+var_export($parser('http://www.example.com/'));
 //returns the following array
-//[
-//    'scheme' => 'http',
-//    'user' => null,
-//    'pass' => null,
-//    'host' => 'www.example.com',
-//    'port' => null,
-//    'path' => '/',
-//    'query' => null,
-//    'fragment' => null,
-//];
+//array(
+//  'scheme' => 'http',
+//  'user' => null,
+//  'pass' => null,
+//  'host' => 'www.example.com',
+//  'port' => null,
+//  'path' => '/',
+//  'query' => null,
+//  'fragment' => null,
+//);
 
-var_dump(parse_url('http://www.example.com/'));
+var_export(parse_url('http://www.example.com/'));
 //returns the following array
-//[
-//    'scheme' => 'http',
-//    'host' => 'www.example.com',
-//    'path' => '/',
-//];
+//array(
+//  'scheme' => 'http',
+//  'host' => 'www.example.com',
+//  'path' => '/',
+//);
 ```
 
 - Accessing individual component is simple without needing extra parameters:
@@ -140,18 +140,18 @@ use League\Uri\Parser;
 
 $uri = 'http:www.example.com';
 $parser = new Parser();
-var_dump($parser($uri));
+var_export($parser($uri));
 //returns the following array
-//[
-//    'scheme' => 'http',
-//    'user' => null,
-//    'pass' => null,
-//    'host' => null,
-//    'port' => null,
-//    'path' => 'www.example.com',
-//    'query' => null,
-//    'fragment' => null,
-//];
+//array(
+//  'scheme' => 'http',
+//  'user' => null,
+//  'pass' => null,
+//  'host' => null,
+//  'port' => null,
+//  'path' => 'www.example.com',
+//  'query' => null,
+//  'fragment' => null,
+//);
 ```
 
 **This invalid HTTP URI is successfully parsed.**

@@ -6,7 +6,7 @@ require 'vendor/autoload.php';
 
 class ParserBench
 {
-    private $uri = 'ftp://cnn.example.com&story=breaking_news@10.0.0.1/top_story.htm';
+    private $uri = 'https://cnn.example.com&story=breaking_news@10.0.0.1/top_story.htm';
 
     /**
      * Baseline - comparison with parse_url

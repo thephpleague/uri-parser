@@ -13,6 +13,8 @@ matrix:
     - php: hhvm
       env: COLLECT_COVERAGE=false VALIDATE_CODING_STYLE=false
   fast_finish: true
+  allow_failures:
+    - php: hhvm
 
 cache:
   directories:
