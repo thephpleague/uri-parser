@@ -2,6 +2,25 @@
 
 All Notable changes to `league-uri-parser` will be documented in this file
 
+## 0.2.0 - 2016-11-02
+
+### Added
+
+- `ParserException` class which extends SPL `InvalidArgumentException`
+- `HostValidation` trait to ease Host validation without the parser
+
+### Fixed
+
+- Improve Performance by removing all regular expressions [see issue #2](https://github.com/thephpleague/uri-parser/issues/2)
+
+### Deprecated
+
+- None
+
+### Removed
+
+- None
+
 ## 0.1.0 - 2016-10-17
 
 ### Added

@@ -7,7 +7,7 @@
  * @author     Ignace Nyamagana Butera <nyamsprod@gmail.com>
  * @copyright  2016 Ignace Nyamagana Butera
  * @license    https://github.com/thephpleague/uri-parser/blob/master/LICENSE (MIT License)
- * @version    1.0.0
+ * @version    0.2.0
  * @link       https://github.com/thephpleague/uri-parser/
  */
 namespace League\Uri;
@@ -20,7 +20,7 @@ use InvalidArgumentException;
  * @see     https://tools.ietf.org/html/rfc3986
  * @package League\Uri
  * @author  Ignace Nyamagana Butera <nyamsprod@gmail.com>
- * @since   1.0.0
+ * @since   0.2.0
  */
 trait HostValidation
 {
