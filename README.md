@@ -113,7 +113,7 @@ use League\Uri\Parser;
 $uri = 'http://www.example.com/?';
 $parser = new Parser();
 $parser($uri)['query'];         //returns ''
-parse_url($uri, PHP_URL_QUERY); //returns `null`
+parse_url($uri, PHP_URL_QUERY); //returns null
 ```
 
 - The path component is never equal to `null`
@@ -128,10 +128,25 @@ use League\Uri\Parser;
 $uri = 'http://www.example.com?';
 $parser = new Parser();
 $parser($uri)['path'];         //returns ''
-parse_url($uri, PHP_URL_PATH); //returns `null`
+parse_url($uri, PHP_URL_PATH); //returns null
 ```
 
-Just like `parse_url`, the `League\Uri\Parser` only parses and extracts from the URI string its components. **You still need to validate them against its scheme specific rules.**
+- On malformed URI, the parser will throw a `ParserException` exception which extends SPL `InvalidArgumentException` instead of returning `false`.
+
+```php
+<?php
+
+use League\Uri\Parser;
+
+$uri = '//user@:80';
+$parser = new Parser();
+$parser($uri);
+//throw a ParserException
+
+parse_url($uri); //returns false
+```
+
+- Just like `parse_url`, the `League\Uri\Parser` only parses and extracts from the URI string its components. **You still need to validate them against its scheme specific rules.**
 
 ```php
 <?php
