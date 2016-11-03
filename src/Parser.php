@@ -242,7 +242,7 @@ final class Parser
     private function parseUriWithoutSchemeAndAuthority($uri)
     {
         if (false !== ($pos = strpos($uri, ':')) && false === strpos(substr($uri, 0, $pos), '/')) {
-            throw ParserException::createFromInvalidState($uri);
+            throw ParserException::createFromInvalidPath($uri);
         }
 
         $final = self::$components;
@@ -323,7 +323,7 @@ final class Parser
         $scheme = array_shift($parts);
 
         if ('' === $scheme) {
-            throw ParserException::createFromInvalidState($uri);
+            throw ParserException::createFromInvalidScheme($uri);
         }
 
         if (strlen($scheme) !== strspn($scheme, self::SCHEME_VALID_CHARS)

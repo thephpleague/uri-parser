@@ -6,7 +6,8 @@ All Notable changes to `league-uri-parser` will be documented in this file
 
 ### Added
 
-- None
+- `ParserException::createFromInvalidScheme` replaces `ParserException::createFromInvalidState` usage
+- `ParserException::createFromInvalidPath` replaces `ParserException::createFromInvalidState` usage
 
 ### Fixed
 
@@ -18,7 +19,7 @@ All Notable changes to `league-uri-parser` will be documented in this file
 
 ### Removed
 
-- None
+- `ParserException::createFromInvalidState`
 
 ## 0.2.0 - 2016-11-02
 

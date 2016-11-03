@@ -25,18 +25,6 @@ use InvalidArgumentException;
 class ParserException extends InvalidArgumentException
 {
     /**
-     * Returns a new Instance from an error in Host validation
-     *
-     * @param string $host
-     *
-     * @return self
-     */
-    public static function createFromInvalidHost($host)
-    {
-        return new self(sprintf('The submitted host `%s` is invalid', $host));
-    }
-
-    /**
      * Returns a new Instance from an error in URI characters
      *
      * @param string $uri
@@ -49,15 +37,27 @@ class ParserException extends InvalidArgumentException
     }
 
     /**
-     * Returns a new Instance from an error in Uri components inter-validity
+     * Returns a new Instance from an error in URI characters
      *
      * @param string $uri
      *
      * @return self
      */
-    public static function createFromInvalidState($uri)
+    public static function createFromInvalidScheme($uri)
     {
-        return new self(sprintf('The submitted uri `%s` contains invalid URI parts', $uri));
+        return new self(sprintf('The submitted uri `%s` contains an invalid scheme', $uri));
+    }
+
+    /**
+     * Returns a new Instance from an error in Host validation
+     *
+     * @param string $host
+     *
+     * @return self
+     */
+    public static function createFromInvalidHost($host)
+    {
+        return new self(sprintf('The submitted host `%s` is invalid', $host));
     }
 
     /**
@@ -70,5 +70,17 @@ class ParserException extends InvalidArgumentException
     public static function createFromInvalidPort($port)
     {
         return new self(sprintf('The submitted port `%s` is invalid', $port));
+    }
+
+    /**
+     * Returns a new Instance from an error in Uri path component
+     *
+     * @param string $uri
+     *
+     * @return self
+     */
+    public static function createFromInvalidPath($uri)
+    {
+        return new self(sprintf('The submitted uri `%s` contains an invalid path', $uri));
     }
 }
