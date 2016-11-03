@@ -2,6 +2,24 @@
 
 All Notable changes to `league-uri-parser` will be documented in this file
 
+## Next
+
+### Added
+
+- None
+
+### Fixed
+
+- None
+
+### Deprecated
+
+- None
+
+### Removed
+
+- None
+
 ## 0.2.0 - 2016-11-02
 
 ### Added

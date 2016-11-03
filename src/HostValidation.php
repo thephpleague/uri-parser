@@ -12,8 +12,6 @@
  */
 namespace League\Uri;
 
-use InvalidArgumentException;
-
 /**
  * a Trait to validate a Hostname
  *
@@ -33,7 +31,7 @@ trait HostValidation
      *
      * @param string $host
      *
-     * @throws InvalidArgumentException If the host component is invalid
+     * @throws ParserException If the host component is invalid
      *
      * @return string
      */
