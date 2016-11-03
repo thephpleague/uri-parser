@@ -19,7 +19,6 @@
         }
     ],
     "require": {
-        "ext-mbstring" : "*",
         "ext-intl" : "*",
         "php" : ">=5.6.0"
     },

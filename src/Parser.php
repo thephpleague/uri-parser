@@ -196,7 +196,6 @@ final class Parser
 
         $port_delimiter_index = $pos + 1;
         $final['host'] = $this->filterHost(substr($hostname, 0, $port_delimiter_index));
-
         if (!isset($hostname[$port_delimiter_index])) {
             return $final;
         }
@@ -205,8 +204,7 @@ final class Parser
             throw ParserException::createFromInvalidPort(substr($hostname, $port_delimiter_index));
         }
 
-        $port = substr($hostname, $port_delimiter_index + 1);
-        $final['port'] = $this->filterPort($port);
+        $final['port'] = $this->filterPort(substr($hostname, $port_delimiter_index + 1));
 
         return $final;
     }
@@ -226,6 +224,8 @@ final class Parser
      * </code>
      *
      * ex: path?q#f
+     * ex: /path
+     * ex: /pa:th#f
      *
      * This method returns an associative array containing all
      * the URI components.
