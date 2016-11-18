@@ -37,15 +37,7 @@ trait HostValidation
      */
     protected function filterHost($host)
     {
-        static $host_filter;
-        if (null === $host_filter) {
-            $host_filter = ['name' => FILTER_VALIDATE_IP, 'flag' => FILTER_FLAG_IPV4];
-            if (defined('FILTER_VALIDATE_DOMAIN')) {
-                $host_filter = ['name' => FILTER_VALIDATE_DOMAIN, 'flag' => FILTER_FLAG_HOSTNAME];
-            }
-        }
-
-        if (filter_var($host, $host_filter['name'], $host_filter['flag'])
+        if (filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)
             || $this->isValidHostnameIpv6($host)
             || $this->isValidHostname($host)) {
             return $host;
