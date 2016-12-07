@@ -37,13 +37,25 @@ trait HostValidation
      */
     protected function filterHost($host)
     {
-        if (filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)
-            || $this->isValidHostnameIpv6($host)
-            || $this->isValidHostname($host)) {
+        if ($this->isValidHost($host)) {
             return $host;
         }
 
         throw ParserException::createFromInvalidHost($host);
+    }
+
+    /**
+     * Tell whether a Host is valid
+     *
+     * @param  string $host
+     * @return bool
+     */
+    public function isValidHost($host)
+    {
+        return '' == $host
+            || filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)
+            || $this->isValidHostnameIpv6($host)
+            || $this->isValidHostname($host);
     }
 
     /**

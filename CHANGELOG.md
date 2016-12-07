@@ -6,6 +6,7 @@ All Notable changes to `league-uri-parser` will be documented in this file
 
 ### Added
 
+- `Parser::isValidHost` method
 - `ParserException::createFromInvalidScheme` replaces `ParserException::createFromInvalidState` usage
 - `ParserException::createFromInvalidPath` replaces `ParserException::createFromInvalidState` usage
 

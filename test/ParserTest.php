@@ -609,7 +609,6 @@ class ParserTest extends TestCase
             'invalid host and URI' => ['2620:0:1cfe:face:b00c::3'],
             'invalid scheme and path' => ['0scheme://host/path?query#fragment'],
             'invalid path PHP bug #72811' => ['[::1]:80'],
-            'invalid uri with authority without host' => ['//user@:80'],
         ];
     }
 }
