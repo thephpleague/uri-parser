@@ -2,8 +2,8 @@
 
 namespace LeagueTest\Uri;
 
+use League\Uri\Exception;
 use League\Uri\Parser;
-use League\Uri\ParserException;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -590,7 +590,7 @@ class ParserTest extends TestCase
      */
     public function testParseFailed($uri)
     {
-        $this->setExpectedException(ParserException::class);
+        $this->setExpectedException(Exception::class);
         $this->parser->__invoke($uri);
     }
 

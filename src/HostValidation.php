@@ -31,7 +31,7 @@ trait HostValidation
      *
      * @param string $host
      *
-     * @throws ParserException If the host component is invalid
+     * @throws Exception If the host component is invalid
      *
      * @return string
      */
@@ -41,7 +41,7 @@ trait HostValidation
             return $host;
         }
 
-        throw ParserException::createFromInvalidHost($host);
+        throw Exception::createFromInvalidHost($host);
     }
 
     /**

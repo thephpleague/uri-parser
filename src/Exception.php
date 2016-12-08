@@ -22,18 +22,18 @@ use InvalidArgumentException;
  * @author  Ignace Nyamagana Butera <nyamsprod@gmail.com>
  * @since   0.2.0
  */
-class ParserException extends InvalidArgumentException
+class Exception extends InvalidArgumentException
 {
     /**
      * Returns a new Instance from an error in URI characters
      *
      * @param string $uri
      *
-     * @return self
+     * @return static
      */
     public static function createFromInvalidCharacters($uri)
     {
-        return new self(sprintf('The submitted uri `%s` contains invalid characters', $uri));
+        return new static(sprintf('The submitted uri `%s` contains invalid characters', $uri));
     }
 
     /**
@@ -41,11 +41,11 @@ class ParserException extends InvalidArgumentException
      *
      * @param string $uri
      *
-     * @return self
+     * @return static
      */
     public static function createFromInvalidScheme($uri)
     {
-        return new self(sprintf('The submitted uri `%s` contains an invalid scheme', $uri));
+        return new static(sprintf('The submitted uri `%s` contains an invalid scheme', $uri));
     }
 
     /**
@@ -53,11 +53,11 @@ class ParserException extends InvalidArgumentException
      *
      * @param string $host
      *
-     * @return self
+     * @return static
      */
     public static function createFromInvalidHost($host)
     {
-        return new self(sprintf('The submitted host `%s` is invalid', $host));
+        return new static(sprintf('The submitted host `%s` is invalid', $host));
     }
 
     /**
@@ -65,11 +65,11 @@ class ParserException extends InvalidArgumentException
      *
      * @param string $port
      *
-     * @return self
+     * @return static
      */
     public static function createFromInvalidPort($port)
     {
-        return new self(sprintf('The submitted port `%s` is invalid', $port));
+        return new static(sprintf('The submitted port `%s` is invalid', $port));
     }
 
     /**
@@ -77,10 +77,10 @@ class ParserException extends InvalidArgumentException
      *
      * @param string $uri
      *
-     * @return self
+     * @return static
      */
     public static function createFromInvalidPath($uri)
     {
-        return new self(sprintf('The submitted uri `%s` contains an invalid path', $uri));
+        return new static(sprintf('The submitted uri `%s` contains an invalid path', $uri));
     }
 }

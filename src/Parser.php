@@ -79,7 +79,7 @@ final class Parser
      *
      * @param string $uri
      *
-     * @throws ParserException if the URI contains invalid characters
+     * @throws Exception if the URI contains invalid characters
      *
      * @return array
      */
@@ -103,7 +103,7 @@ final class Parser
         }
 
         if (strlen($uri) !== strcspn($uri, self::INVALID_URI_CHARS)) {
-            throw ParserException::createFromInvalidCharacters($uri);
+            throw Exception::createFromInvalidCharacters($uri);
         }
 
         //if the first characters is a known URI delimiter parsing
@@ -162,7 +162,7 @@ final class Parser
      *
      * @param string $uri
      *
-     * @throws ParserException If the port is invalid
+     * @throws Exception If the port is invalid
      *
      * @return array
      */
@@ -229,7 +229,7 @@ final class Parser
         }
 
         if (':' !== $hostname[$port_delimiter_index]) {
-            throw ParserException::createFromInvalidPort(substr($hostname, $port_delimiter_index));
+            throw Exception::createFromInvalidPort(substr($hostname, $port_delimiter_index));
         }
 
         $final['port'] = $this->filterPort(substr($hostname, $port_delimiter_index + 1));
@@ -263,7 +263,7 @@ final class Parser
      *
      * @param string $uri
      *
-     * @throws ParserException If the path component is invalid
+     * @throws Exception If the path component is invalid
      *
      * @return array
      */
@@ -272,7 +272,7 @@ final class Parser
         //No scheme is present so we ensure that if presence of a path-noscheme
         //RFC3986 is respected
         if (false !== ($pos = strpos($uri, ':')) && false === strpos(substr($uri, 0, $pos), '/')) {
-            throw ParserException::createFromInvalidPath($uri);
+            throw Exception::createFromInvalidPath($uri);
         }
 
         //Parsing is done from the right upmost part to the left
@@ -297,7 +297,7 @@ final class Parser
      *
      * @param mixed $port the port number
      *
-     * @throws ParserException If the port number is invalid.
+     * @throws Exception If the port number is invalid.
      *
      * @return null|int
      */
@@ -316,7 +316,7 @@ final class Parser
             return $formatted_port;
         }
 
-        throw ParserException::createFromInvalidPort($port);
+        throw Exception::createFromInvalidPort($port);
     }
 
     /**
@@ -345,7 +345,7 @@ final class Parser
      *
      * @param string $uri
      *
-     * @throws ParserException If the URI scheme component is empty
+     * @throws Exception If the URI scheme component is empty
      *
      * @return array
      */
@@ -358,7 +358,7 @@ final class Parser
 
         //1.1 - a scheme can not be empty (ie a URI can not start with a colon)
         if ('' === $scheme) {
-            throw ParserException::createFromInvalidScheme($uri);
+            throw Exception::createFromInvalidScheme($uri);
         }
 
         //2 - depending on the scheme presence and validity we will differ the
