@@ -2,12 +2,12 @@
 
 All Notable changes to `league-uri-parser` will be documented in this file
 
-## Next
+## 0.3.0 - 2016-11-09
 
 ### Added
 
 - `League\Uri\Exception` replaces `League\Uri\ParserException`
-- `League\Uri\Parser::isValidHost` method
+- `League\Uri\Parser::isHost` method
 - `League\Uri\Exception::createFromInvalidScheme` replaces `ParserException::createFromInvalidState` usage
 - `League\Uri\Exception::createFromInvalidPath` replaces `ParserException::createFromInvalidState` usage
 
@@ -21,8 +21,9 @@ All Notable changes to `league-uri-parser` will be documented in this file
 
 ### Removed
 
-- `League\Uri\ParserException` replaced by `Exception`
+- `League\Uri\ParserException` replaced by `League\Uri\Exception`
 - `League\Uri\ParserException::createFromInvalidState`
+- `League\Uri\HostValidation` trait
 
 ## 0.2.0 - 2016-11-02
 

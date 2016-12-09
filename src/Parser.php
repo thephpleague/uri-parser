@@ -22,20 +22,17 @@ namespace League\Uri;
  */
 final class Parser
 {
-    use HostValidation;
-
     const INVALID_URI_CHARS = "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1A\x1B\x1C\x1D\x1E\x1F\x7F";
 
     const SCHEME_VALID_STARTING_CHARS = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
     const SCHEME_VALID_CHARS = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+.';
 
-    /**
-     * Default URI components
-     *
-     * @var array
-     */
-    private static $components = [
+    const LABEL_VALID_STARTING_CHARS = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+    const LOCAL_LINK_PREFIX = '1111111010';
+
+    const URI_COMPONENTS = [
         'scheme' => null, 'user' => null, 'pass' => null, 'host' => null,
         'port' => null, 'path' => '', 'query' => null, 'fragment' => null,
     ];
@@ -86,10 +83,10 @@ final class Parser
     public function __invoke($uri)
     {
         if ('' === $uri) {
-            return self::$components;
+            return self::URI_COMPONENTS;
         }
 
-        $final = self::$components;
+        $final = self::URI_COMPONENTS;
         if ('/' === $uri) {
             $final['path'] = '/';
 
@@ -170,7 +167,7 @@ final class Parser
     {
         //Parsing is done from the right upmost part to the left
         //1 - detect the fragment part if any
-        $final = self::$components;
+        $final = self::URI_COMPONENTS;
         $parts = explode('#', $uri, 2);
         $uri = array_shift($parts);
         $final['fragment'] = array_shift($parts);
@@ -277,7 +274,7 @@ final class Parser
 
         //Parsing is done from the right upmost part to the left
         //1 - detect the fragment part if any
-        $final = self::$components;
+        $final = self::URI_COMPONENTS;
         $parts = explode('#', $uri, 2);
         $uri = array_shift($parts);
         $final['fragment'] = array_shift($parts);
@@ -288,6 +285,115 @@ final class Parser
         $final['query'] = array_shift($parts);
 
         return $final;
+    }
+
+    /**
+     * validate the host component
+     *
+     * @param string $host
+     *
+     * @throws Exception If the host component is invalid
+     *
+     * @return string
+     */
+    protected function filterHost($host)
+    {
+        if ($this->isHost($host)) {
+            return $host;
+        }
+
+        throw Exception::createFromInvalidHost($host);
+    }
+
+    /**
+     * Returns whether a Host is valid.
+     *
+     * @see https://tools.ietf.org/html/rfc3986#section-3.2.2
+     *
+     * @param string|null $host
+     *
+     * @return bool
+     */
+    public function isHost($host)
+    {
+        return '' == $host
+            || filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)
+            || $this->isIpv6Host($host)
+            || $this->isRegisteredName($host);
+    }
+
+    /**
+     * validate an Ipv6 Hostname
+     *
+     * @see http://tools.ietf.org/html/rfc6874#section-2
+     * @see http://tools.ietf.org/html/rfc6874#section-4
+     *
+     * @param string $ipv6
+     *
+     * @return bool
+     */
+    protected function isIpv6Host($ipv6)
+    {
+        if (false === strpos($ipv6, '[')) {
+            return false;
+        }
+
+        $ipv6 = substr($ipv6, 1, -1);
+        if (false === ($pos = strpos($ipv6, '%'))) {
+            return (bool) filter_var($ipv6, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6);
+        }
+
+        $scope = rawurldecode(substr($ipv6, $pos));
+        if (strlen($scope) !== strcspn($scope, '?#@[]'.self::INVALID_URI_CHARS)) {
+            return false;
+        }
+
+        $ipv6 = substr($ipv6, 0, $pos);
+        if (!filter_var($ipv6, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
+            return false;
+        }
+
+        $reducer = function ($carry, $char) {
+            return $carry.str_pad(decbin(ord($char)), 8, '0', STR_PAD_LEFT);
+        };
+
+        $res = array_reduce(str_split(unpack('A16', inet_pton($ipv6))[1]), $reducer, '');
+
+        return substr($res, 0, 10) === self::LOCAL_LINK_PREFIX;
+    }
+
+    /**
+     * Returns whether the hostname is valid
+     *
+     * @param string $host
+     *
+     * @return bool
+     */
+    protected function isRegisteredName($host)
+    {
+        if ('.' === mb_substr($host, -1, 1, 'UTF-8')) {
+            $host = mb_substr($host, 0, -1, 'UTF-8');
+        }
+
+        $labels = array_map('idn_to_ascii', explode('.', $host));
+
+        return 127 > count($labels) && $labels === array_filter($labels, [$this, 'isHostLabel']);
+    }
+
+    /**
+     * Returns whether the host label is valid
+     *
+     * @param string $label
+     *
+     * @return bool
+     */
+    protected function isHostLabel($label)
+    {
+        $pos = strlen($label);
+        $delimiters = $label[0].$label[$pos - 1];
+
+        return 2 === strspn($delimiters, self::LABEL_VALID_STARTING_CHARS)
+            && $pos === strspn($label, self::LABEL_VALID_STARTING_CHARS.'-');
     }
 
     /**
@@ -372,7 +478,7 @@ final class Parser
             return $this->parseUriWithoutSchemeAndAuthority($uri);
         }
 
-        $final = self::$components;
+        $final = self::URI_COMPONENTS;
         $final['scheme'] = $scheme;
 
         //2.2 - if no scheme specific part is detect parsing is finished
