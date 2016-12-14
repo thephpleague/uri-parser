@@ -290,7 +290,7 @@ final class Parser
     /**
      * validate the host component
      *
-     * @param string $host
+     * @param string|null $host
      *
      * @throws Exception If the host component is invalid
      *
@@ -298,7 +298,7 @@ final class Parser
      */
     protected function filterHost($host)
     {
-        if ($this->isHost($host)) {
+        if ('' == $host || $this->isHost($host)) {
             return $host;
         }
 
@@ -310,14 +310,13 @@ final class Parser
      *
      * @see https://tools.ietf.org/html/rfc3986#section-3.2.2
      *
-     * @param string|null $host
+     * @param string $host
      *
      * @return bool
      */
     public function isHost($host)
     {
-        return '' == $host
-            || filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)
+        return filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)
             || $this->isIpv6Host($host)
             || $this->isRegisteredName($host);
     }
