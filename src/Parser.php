@@ -44,7 +44,7 @@ final class Parser
      * of the various components of the URL that are present.
      *
      * <code>
-     * $components = (new Parser())->__invoke('http://foo@test.example.com:42?query#');
+     * $components = (new Parser())('http://foo@test.example.com:42?query#');
      * var_export($components);
      * //will display
      * array(
@@ -80,9 +80,9 @@ final class Parser
      *
      * @return array
      */
-    public function __invoke($uri)
+    public function __invoke(string $uri): array
     {
-        if ('' === $uri) {
+        if ('' == $uri) {
             return self::URI_COMPONENTS;
         }
 
@@ -163,7 +163,7 @@ final class Parser
      *
      * @return array
      */
-    private function parseUriWithoutScheme($uri)
+    private function parseUriWithoutScheme(string $uri): array
     {
         //Parsing is done from the right upmost part to the left
         //1 - detect the fragment part if any
@@ -264,7 +264,7 @@ final class Parser
      *
      * @return array
      */
-    private function parseUriWithoutSchemeAndAuthority($uri)
+    private function parseUriWithoutSchemeAndAuthority(string $uri): array
     {
         //No scheme is present so we ensure that if presence of a path-noscheme
         //RFC3986 is respected
@@ -294,7 +294,7 @@ final class Parser
      *
      * @throws Exception If the host component is invalid
      *
-     * @return string
+     * @return string|null
      */
     protected function filterHost($host)
     {
@@ -314,7 +314,7 @@ final class Parser
      *
      * @return bool
      */
-    public function isHost($host)
+    public function isHost(string $host): bool
     {
         return filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)
             || $this->isIpv6Host($host)
@@ -331,7 +331,7 @@ final class Parser
      *
      * @return bool
      */
-    protected function isIpv6Host($ipv6)
+    protected function isIpv6Host(string $ipv6): bool
     {
         if (false === strpos($ipv6, '[')) {
             return false;
@@ -368,7 +368,7 @@ final class Parser
      *
      * @return bool
      */
-    protected function isRegisteredName($host)
+    protected function isRegisteredName(string $host): bool
     {
         if ('.' === mb_substr($host, -1, 1, 'UTF-8')) {
             $host = mb_substr($host, 0, -1, 'UTF-8');
@@ -386,7 +386,7 @@ final class Parser
      *
      * @return bool
      */
-    protected function isHostLabel($label)
+    protected function isHostLabel(string $label): bool
     {
         $pos = strlen($label);
         $delimiters = $label[0].$label[$pos - 1];
@@ -454,7 +454,7 @@ final class Parser
      *
      * @return array
      */
-    private function parseUriWithColonCharacter($uri)
+    private function parseUriWithColonCharacter(string $uri): array
     {
         //1 - we split the URI on the first detected colon character
         $parts = explode(':', $uri, 2);

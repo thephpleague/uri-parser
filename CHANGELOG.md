@@ -2,6 +2,24 @@
 
 All Notable changes to `league-uri-parser` will be documented in this file
 
+## Next
+
+### Added
+
+- None
+
+### Fixed
+
+- None
+
+### Deprecated
+
+- None
+
+### Removed
+
+- Support for PHP5
+
 ## 0.3.0 - 2016-11-09
 
 ### Added
