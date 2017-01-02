@@ -1,6 +1,6 @@
 filter:
     paths: [src/*]
-    excluded_paths: [test/*]
+    excluded_paths: [tests/*]
 checks:
     php:
         code_rating: true
@@ -29,7 +29,7 @@ tools:
             paths: ['src']
     php_loc:
         enabled: true
-        excluded_dirs: [test, vendor]
+        excluded_dirs: [tests, vendor]
     php_cpd:
         enabled: true
-        excluded_dirs: [test, vendor]
+        excluded_dirs: [tests, vendor]

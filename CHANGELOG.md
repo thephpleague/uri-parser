@@ -2,15 +2,15 @@
 
 All Notable changes to `league-uri-parser` will be documented in this file
 
-## Next
+## 1.0.0 - 2017-01-04
 
 ### Added
 
-- None
+- `League\Uri\Exception::createFromInvalidHostname`
 
 ### Fixed
 
-- None
+- `League\Uri\Parser::isHost` method improved
 
 ### Deprecated
 
@@ -19,6 +19,7 @@ All Notable changes to `league-uri-parser` will be documented in this file
 ### Removed
 
 - Support for PHP5
+- Benchmark test
 
 ## 0.3.0 - 2016-11-09
 

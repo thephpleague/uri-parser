@@ -7,9 +7,11 @@
  * @author     Ignace Nyamagana Butera <nyamsprod@gmail.com>
  * @copyright  2016 Ignace Nyamagana Butera
  * @license    https://github.com/thephpleague/uri-parser/blob/master/LICENSE (MIT License)
- * @version    0.2.0
+ * @version    1.0.0
  * @link       https://github.com/thephpleague/uri-parser/
  */
+declare(strict_types=1);
+
 namespace League\Uri;
 
 use InvalidArgumentException;
@@ -31,7 +33,7 @@ class Exception extends InvalidArgumentException
      *
      * @return static
      */
-    public static function createFromInvalidCharacters($uri)
+    public static function createFromInvalidCharacters(string $uri)
     {
         return new static(sprintf('The submitted uri `%s` contains invalid characters', $uri));
     }
@@ -43,7 +45,7 @@ class Exception extends InvalidArgumentException
      *
      * @return static
      */
-    public static function createFromInvalidScheme($uri)
+    public static function createFromInvalidScheme(string $uri)
     {
         return new static(sprintf('The submitted uri `%s` contains an invalid scheme', $uri));
     }
@@ -55,7 +57,7 @@ class Exception extends InvalidArgumentException
      *
      * @return static
      */
-    public static function createFromInvalidHost($host)
+    public static function createFromInvalidHost(string $host)
     {
         return new static(sprintf('The submitted host `%s` is invalid', $host));
     }
@@ -63,7 +65,19 @@ class Exception extends InvalidArgumentException
     /**
      * Returns a new Instance from an error in port validation
      *
-     * @param string $port
+     * @param string $hostname
+     *
+     * @return static
+     */
+    public static function createFromInvalidHostname(string $hostname)
+    {
+        return new static(sprintf('The submitted hostname `%s` is invalid', $hostname));
+    }
+
+    /**
+     * Returns a new Instance from an error in port validation
+     *
+     * @param mixed $port
      *
      * @return static
      */
@@ -79,7 +93,7 @@ class Exception extends InvalidArgumentException
      *
      * @return static
      */
-    public static function createFromInvalidPath($uri)
+    public static function createFromInvalidPath(string $uri)
     {
         return new static(sprintf('The submitted uri `%s` contains an invalid path', $uri));
     }

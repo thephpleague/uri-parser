@@ -7,9 +7,11 @@
  * @author     Ignace Nyamagana Butera <nyamsprod@gmail.com>
  * @copyright  2016 Ignace Nyamagana Butera
  * @license    https://github.com/thephpleague/uri-parser/blob/master/LICENSE (MIT License)
- * @version    0.2.0
+ * @version    1.0.0
  * @link       https://github.com/thephpleague/uri-parser/
  */
+declare(strict_types=1);
+
 namespace League\Uri;
 
 /**
@@ -20,7 +22,7 @@ namespace League\Uri;
  * @author  Ignace Nyamagana Butera <nyamsprod@gmail.com>
  * @since   0.1.0
  */
-final class Parser
+class Parser
 {
     const INVALID_URI_CHARS = "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1A\x1B\x1C\x1D\x1E\x1F\x7F";
 
@@ -86,64 +88,66 @@ final class Parser
             return self::URI_COMPONENTS;
         }
 
-        $final = self::URI_COMPONENTS;
-        if ('/' === $uri) {
-            $final['path'] = '/';
+        if ('/' == $uri) {
+            $components = self::URI_COMPONENTS;
+            $components['path'] = '/';
 
-            return $final;
+            return $components;
         }
 
-        if ('//' === $uri) {
-            $final['host'] = '';
+        if ('//' == $uri) {
+            $components = self::URI_COMPONENTS;
+            $components['host'] = '';
 
-            return $final;
+            return $components;
         }
 
         if (strlen($uri) !== strcspn($uri, self::INVALID_URI_CHARS)) {
             throw Exception::createFromInvalidCharacters($uri);
         }
 
-        //if the first characters is a known URI delimiter parsing
-        //can be simplified
+        //if the first character is a known URI delimiter parsing can be simplified
         $first_char = $uri[0];
 
         //The URI is made of the fragment only
-        if ('#' === $first_char) {
-            $final['fragment'] = (string) substr($uri, 1);
+        if ('#' == $first_char) {
+            $components = self::URI_COMPONENTS;
+            $components['fragment'] = (string) substr($uri, 1);
 
-            return $final;
+            return $components;
         }
 
         //The URI is made of the query and fragment
-        if ('?' === $first_char) {
+        if ('?' == $first_char) {
+            $components = self::URI_COMPONENTS;
             $parts = explode('#', substr($uri, 1), 2);
-            $final['query'] = array_shift($parts);
-            $final['fragment'] = array_shift($parts);
+            $components['query'] = array_shift($parts);
+            $components['fragment'] = array_shift($parts);
 
-            return $final;
+            return $components;
         }
 
         //The URI does not contain any scheme part
         if (0 === strpos($uri, '//')) {
-            return $this->parseUriWithoutScheme(substr($uri, 2));
+            return $this->parseSchemeSpecificPart($uri);
         }
 
         //The URI is made of a path, query and fragment
-        if ('/' === $first_char || false === strpos($uri, ':')) {
-            return $this->parseUriWithoutSchemeAndAuthority($uri);
+        if ('/' == $first_char || false === strpos($uri, ':')) {
+            return $this->parsePathQueryAndFragment($uri);
         }
 
         //Fallback parser
-        return $this->parseUriWithColonCharacter($uri);
+        return $this->fallbackParser($uri);
     }
 
     /**
      * Extract Components from an URI without a scheme part.
      *
-     * The URI MUST start with the authority component not
+     * The URI MUST start with the authority component
      * preceded by its delimiter the double slash ('//')
      *
-     * ex: user:pass@host:42/path?query#fragment
+     * ex: //user:pass@host:42/path?query#fragment
      *
      * The authority MUST adhere to the RFC3986 requirements.
      *
@@ -163,128 +167,82 @@ final class Parser
      *
      * @return array
      */
-    private function parseUriWithoutScheme(string $uri): array
+    private function parseSchemeSpecificPart(string $uri): array
     {
+        //We remove the authority delimiter
+        $remaining_uri = (string) substr($uri, 2);
+
         //Parsing is done from the right upmost part to the left
         //1 - detect the fragment part if any
-        $final = self::URI_COMPONENTS;
-        $parts = explode('#', $uri, 2);
-        $uri = array_shift($parts);
-        $final['fragment'] = array_shift($parts);
+        $parts = explode('#', $remaining_uri, 2);
+        $remaining_uri = array_shift($parts);
+        $components = self::URI_COMPONENTS;
+        $components['fragment'] = array_shift($parts);
 
         //2 - detect the query part if any
-        $parts = explode('?', $uri, 2);
-        $uri = array_shift($parts);
-        $final['query'] = array_shift($parts);
+        $parts = explode('?', $remaining_uri, 2);
+        $remaining_uri = array_shift($parts);
+        $components['query'] = array_shift($parts);
 
         //3 - detect the path part if any
-        if (false !== ($pos = strpos($uri, '/'))) {
-            $final['path'] = substr($uri, $pos);
-            $uri = substr($uri, 0, $pos);
+        if (false !== ($pos = strpos($remaining_uri, '/'))) {
+            $components['path'] = substr($remaining_uri, $pos);
+            $remaining_uri = substr($remaining_uri, 0, $pos);
         }
 
-        //4 - detect and parse the authority
-        //if the uri is empty then the host is
-        //set to an empty string
-        if ('' === $uri) {
-            $final['host'] = '';
+        //4 - The $remaining_uri represents the authority part
+        //if the authority part is empty parsing is simplified
+        if ('' === $remaining_uri) {
+            $components['host'] = '';
 
-            return $final;
+            return $components;
         }
 
-        //4.1 - split the authority into the userInfo part
-        // and the hostname
-        $authority = explode('@', $uri, 2);
-        $hostname = array_pop($authority);
-        $user_info = array_pop($authority);
+        //otherwise we split the authority into the user information and the hostname parts
+        $parts = explode('@', $remaining_uri, 2);
+        $hostname = array_pop($parts);
+        $user_info = array_pop($parts);
 
-        //4.2 - parse the user info part if present
+        //4.1 - Parsing user information
         if (null !== $user_info) {
             $parts = explode(':', $user_info, 2);
-            $final['user'] = array_shift($parts);
-            $final['pass'] = array_shift($parts);
+            $components['user'] = array_shift($parts);
+            $components['pass'] = array_shift($parts);
         }
 
-        //4.3 - parse the hostname
-        //4.3.1 Parsing the hostname if the host is not an IPv6 or IPfuture
-        if (false === ($pos = strpos($hostname, ']'))) {
-            $parts = explode(':', $hostname, 2);
-            $host = array_shift($parts);
-            $final['host'] = $this->filterHost($host);
+        //4.2 - Parsing the hostname
+        list($components['host'], $components['port']) = $this->parseHostname($hostname);
 
-            $port = array_shift($parts);
-            $final['port'] = $this->filterPort($port);
-
-            return $final;
-        }
-
-        //4.3.2 - Parsing the hostname if the host is an IPv6 or IPfuture
-        $port_delimiter_index = $pos + 1;
-        $final['host'] = $this->filterHost(substr($hostname, 0, $port_delimiter_index));
-        if (!isset($hostname[$port_delimiter_index])) {
-            return $final;
-        }
-
-        if (':' !== $hostname[$port_delimiter_index]) {
-            throw Exception::createFromInvalidPort(substr($hostname, $port_delimiter_index));
-        }
-
-        $final['port'] = $this->filterPort(substr($hostname, $port_delimiter_index + 1));
-
-        return $final;
+        return $components;
     }
 
     /**
-     * Extract Components from an URI without scheme or authority part.
+     * Parse and validate the URI hostname
      *
-     * The URI contains a path component and MUST adhere to path requirements
-     * from RFC3986. The path can be
-     *
-     * <code>
-     * path   = path-abempty    ; begins with "/" or is empty
-     *        / path-absolute   ; begins with "/" but not "//"
-     *        / path-noscheme   ; begins with a non-colon segment
-     *        / path-rootless   ; begins with a segment
-     *        / path-empty      ; zero characters
-     * </code>
-     *
-     * ex: path?q#f
-     * ex: /path
-     * ex: /pa:th#f
-     *
-     * This method returns an associative array containing all
-     * the URI components.
-     *
-     * @see https://tools.ietf.org/html/rfc3986#section-3.3
-     * @see Parser::__invoke
-     *
-     * @param string $uri
-     *
-     * @throws Exception If the path component is invalid
+     * @param string $hostname
      *
      * @return array
      */
-    private function parseUriWithoutSchemeAndAuthority(string $uri): array
+    private function parseHostname(string $hostname): array
     {
-        //No scheme is present so we ensure that if presence of a path-noscheme
-        //RFC3986 is respected
-        if (false !== ($pos = strpos($uri, ':')) && false === strpos(substr($uri, 0, $pos), '/')) {
-            throw Exception::createFromInvalidPath($uri);
+        if (false === strpos($hostname, '[')) {
+            $parts = explode(':', $hostname, 2);
+
+            return [
+                $this->filterHost(array_shift($parts)),
+                $this->filterPort(array_shift($parts)),
+            ];
         }
 
-        //Parsing is done from the right upmost part to the left
-        //1 - detect the fragment part if any
-        $final = self::URI_COMPONENTS;
-        $parts = explode('#', $uri, 2);
-        $uri = array_shift($parts);
-        $final['fragment'] = array_shift($parts);
+        $delimiter_offset = strpos($hostname, ']') + 1;
+        if (isset($hostname[$delimiter_offset]) && ':' != $hostname[$delimiter_offset]) {
+            throw Exception::createFromInvalidHostname($hostname);
+        }
 
-        //2 - detect the query and the path part
-        $parts = explode('?', $uri, 2);
-        $final['path'] = array_shift($parts);
-        $final['query'] = array_shift($parts);
-
-        return $final;
+        return [
+            $this->filterHost(substr($hostname, 0, $delimiter_offset)),
+            $this->filterPort(substr($hostname, ++$delimiter_offset)),
+        ];
     }
 
     /**
@@ -298,7 +256,7 @@ final class Parser
      */
     protected function filterHost($host)
     {
-        if ('' == $host || $this->isHost($host)) {
+        if (null === $host || $this->isHost($host)) {
             return $host;
         }
 
@@ -316,7 +274,8 @@ final class Parser
      */
     public function isHost(string $host): bool
     {
-        return filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)
+        return '' === $host
+            || filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)
             || $this->isIpv6Host($host)
             || $this->isRegisteredName($host);
     }
@@ -333,7 +292,7 @@ final class Parser
      */
     protected function isIpv6Host(string $ipv6): bool
     {
-        if (false === strpos($ipv6, '[')) {
+        if ('[' !== substr($ipv6, 0, 1) || ']' !== substr($ipv6, -1, 1)) {
             return false;
         }
 
@@ -370,8 +329,8 @@ final class Parser
      */
     protected function isRegisteredName(string $host): bool
     {
-        if ('.' === mb_substr($host, -1, 1, 'UTF-8')) {
-            $host = mb_substr($host, 0, -1, 'UTF-8');
+        if ('.' === substr($host, -1, 1)) {
+            $host = substr($host, 0, -1);
         }
 
         $labels = array_map('idn_to_ascii', explode('.', $host));
@@ -400,7 +359,7 @@ final class Parser
      *
      * An exception is raised for ports outside the established TCP and UDP port ranges.
      *
-     * @param mixed $port the port number
+     * @param string|null $port the port number
      *
      * @throws Exception If the port number is invalid.
      *
@@ -425,6 +384,58 @@ final class Parser
     }
 
     /**
+     * Extract Components from an URI without scheme or authority part.
+     *
+     * The URI contains a path component and MUST adhere to path requirements
+     * from RFC3986. The path can be
+     *
+     * <code>
+     * path   = path-abempty    ; begins with "/" or is empty
+     *        / path-absolute   ; begins with "/" but not "//"
+     *        / path-noscheme   ; begins with a non-colon segment
+     *        / path-rootless   ; begins with a segment
+     *        / path-empty      ; zero characters
+     * </code>
+     *
+     * ex: path?q#f
+     * ex: /path
+     * ex: /pa:th#f
+     *
+     * This method returns an associative array containing all
+     * the URI components.
+     *
+     * @see https://tools.ietf.org/html/rfc3986#section-3.3
+     * @see Parser::__invoke
+     *
+     * @param string $uri
+     *
+     * @throws Exception If the path component is invalid
+     *
+     * @return array
+     */
+    private function parsePathQueryAndFragment(string $uri): array
+    {
+        //No scheme is present so we ensure that the path respects RFC3986
+        if (false !== ($pos = strpos($uri, ':')) && false === strpos(substr($uri, 0, $pos), '/')) {
+            throw Exception::createFromInvalidPath($uri);
+        }
+
+        //Parsing is done from the right upmost part to the left
+        //1 - detect the fragment part if any
+        $parts = explode('#', $uri, 2);
+        $remaining_uri = array_shift($parts);
+        $components = self::URI_COMPONENTS;
+        $components['fragment'] = array_shift($parts);
+
+        //2 - detect the query and the path part
+        $parts = explode('?', $remaining_uri, 2);
+        $components['path'] = array_shift($parts);
+        $components['query'] = array_shift($parts);
+
+        return $components;
+    }
+
+    /**
      * Extract components from an URI containing a colon.
      *
      * Depending on the colon ":" position and on the string
@@ -444,8 +455,8 @@ final class Parser
      * the URI components.
      *
      * @see https://tools.ietf.org/html/rfc3986#section-3.1
-     * @see Parser::parseUriWithoutSchemeAndAuthority
-     * @see Parser::parseUriWithoutScheme
+     * @see Parser::parsePathQueryAndFragment
+     * @see Parser::parseSchemeSpecificPart
      * @see Parser::__invoke
      *
      * @param string $uri
@@ -454,11 +465,11 @@ final class Parser
      *
      * @return array
      */
-    private function parseUriWithColonCharacter(string $uri): array
+    private function fallbackParser(string $uri): array
     {
         //1 - we split the URI on the first detected colon character
         $parts = explode(':', $uri, 2);
-        $scheme_specific_part = array_pop($parts);
+        $remaining_uri = array_pop($parts);
         $scheme = array_shift($parts);
 
         //1.1 - a scheme can not be empty (ie a URI can not start with a colon)
@@ -466,55 +477,55 @@ final class Parser
             throw Exception::createFromInvalidScheme($uri);
         }
 
-        //2 - depending on the scheme presence and validity we will differ the
-        //    parsing
+        //2 - depending on the scheme presence and validity we will differ the parsing
 
-        //2.1 - If the scheme part is invalid the URI may be an URI with a
-        //      path-noscheme let's differ the parsing to the
-        //      Parser::parseUriWithoutSchemeAndAuthority method
+        //2.1 - If the scheme part is invalid the URI may be an URI with a path-noscheme
+        //      let's differ the parsing to the Parser::parsePathQueryAndFragment method
         if (strlen($scheme) !== strspn($scheme, self::SCHEME_VALID_CHARS)
             || false === strpos(self::SCHEME_VALID_STARTING_CHARS, $scheme[0])) {
-            return $this->parseUriWithoutSchemeAndAuthority($uri);
+            return $this->parsePathQueryAndFragment($uri);
         }
 
-        $final = self::URI_COMPONENTS;
-        $final['scheme'] = $scheme;
-
         //2.2 - if no scheme specific part is detect parsing is finished
-        if (in_array($scheme_specific_part, [null, ''], true)) {
-            return $final;
+        if ('' == $remaining_uri) {
+            $components = self::URI_COMPONENTS;
+            $components['scheme'] = $scheme;
+
+            return $components;
         }
 
         //2.3 - if the scheme specific part is a double forward slash
-        if ('//' === $scheme_specific_part) {
-            $final['host'] = '';
+        if ('//' === $remaining_uri) {
+            $components = self::URI_COMPONENTS;
+            $components['scheme'] = $scheme;
+            $components['host'] = '';
 
-            return $final;
+            return $components;
         }
 
         //2.4 - if the scheme specific part starts with double forward slash
-        //      we differ the remaining parsing to the
-        //      Parser::parseUriWithoutScheme method
-        if (0 === strpos($scheme_specific_part, '//')) {
-            $final = $this->parseUriWithoutScheme(substr($scheme_specific_part, 2));
-            $final['scheme'] = $scheme;
+        //      we differ the remaining parsing to the Parser::parseSchemeSpecificPart method
+        if (0 === strpos($remaining_uri, '//')) {
+            $components = $this->parseSchemeSpecificPart($remaining_uri);
+            $components['scheme'] = $scheme;
 
-            return $final;
+            return $components;
         }
 
-        //2.5 - Parsing is done from the right upmost part to the left from
-        //      the scheme specific part
+        //2.5 - Parsing is done from the right upmost part to the left from the scheme specific part
+        $components = self::URI_COMPONENTS;
+        $components['scheme'] = $scheme;
 
         //2.5.1 - detect the fragment part if any
-        $parts = explode('#', $scheme_specific_part, 2);
-        $scheme_specific_part = array_shift($parts);
-        $final['fragment'] = array_shift($parts);
+        $parts = explode('#', $remaining_uri, 2);
+        $remaining_uri = array_shift($parts);
+        $components['fragment'] = array_shift($parts);
 
         //2.5.2 - detect the part and query part if any
-        $parts = explode('?', $scheme_specific_part, 2);
-        $final['path'] = array_shift($parts);
-        $final['query'] = array_shift($parts);
+        $parts = explode('?', $remaining_uri, 2);
+        $components['path'] = array_shift($parts);
+        $components['query'] = array_shift($parts);
 
-        return $final;
+        return $components;
     }
 }

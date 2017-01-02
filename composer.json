@@ -34,14 +34,13 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "LeagueTest\\Uri\\": "test"
+            "LeagueTest\\Uri\\": "tests"
         }
     },
     "scripts": {
         "test": "phpunit --coverage-text; php-cs-fixer fix -v --diff --dry-run;",
         "phpunit": "phpunit --coverage-text",
-        "phpcs": "php-cs-fixer fix -v --diff --dry-run;",
-        "benchmarks": "phpbench run benchmarks/ParserBench.php --iterations=20 --revs=100 --report=aggregate"
+        "phpcs": "php-cs-fixer fix -v --diff --dry-run;"
     },
     "extra": {
         "branch-alias": {

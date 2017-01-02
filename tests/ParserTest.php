@@ -581,6 +581,58 @@ class ParserTest extends TestCase
                     'fragment' => null,
                 ],
             ],
+            'RFC3986 LDAP example' => [
+                'ldap://[2001:db8::7]/c=GB?objectClass?one',
+                [
+                    'scheme' => 'ldap',
+                    'user' => null,
+                    'pass' => null,
+                    'host' => '[2001:db8::7]',
+                    'port' => null,
+                    'path' => '/c=GB',
+                    'query' => 'objectClass?one',
+                    'fragment' => null,
+                ],
+            ],
+            'RFC3987 example' => [
+                'http://bébé.bé./有词法别名.zh',
+                [
+                    'scheme' => 'http',
+                    'user' => null,
+                    'pass' => null,
+                    'host' => 'bébé.bé.',
+                    'port' => null,
+                    'path' => '/有词法别名.zh',
+                    'query' => null,
+                    'fragment' => null,
+                ],
+            ],
+            'colon detection respect RFC3986 (1)' => [
+                'http://example.org/hello:12?foo=bar#test',
+                [
+                    'scheme' => 'http',
+                    'user' => null,
+                    'pass' => null,
+                    'host' => 'example.org',
+                    'port' => null,
+                    'path' => '/hello:12',
+                    'query' => 'foo=bar',
+                    'fragment' => 'test',
+                ],
+            ],
+            'colon detection respect RFC3986 (2)' => [
+                '/path/to/colon:34',
+                [
+                    'scheme' => null,
+                    'user' => null,
+                    'pass' => null,
+                    'host' => null,
+                    'port' => null,
+                    'path' => '/path/to/colon:34',
+                    'query' => null,
+                    'fragment' => null,
+                ],
+            ],
         ];
     }
 
@@ -597,18 +649,50 @@ class ParserTest extends TestCase
     public function testInvalidURI()
     {
         return [
-            'invalid uri with incomplete scheme' => ['://host:80/p?q#f'],
-            'invalid port' => ['//host:port/path?query#fragment'],
-            'invalid host' => ['scheme://[127.0.0.1]/path?query#fragment'],
-            'invalid ipv6 scoped 1' => ['scheme://[::1%25%23]/path?query#fragment'],
-            'invalid ipv6 scoped 2' => ['scheme://[fe80::1234::%251]/path?query#fragment'],
-            'invalid ipv6 host 1' => ['scheme://[::1]./path?query#fragment'],
-            'invalid ipv6 host 2' => ['scheme://[[::1]]:80/path?query#fragment'],
+            'invalid scheme (1)' => ['0scheme://host/path?query#fragment'],
+            'invalid scheme (2)' => ['://host:80/p?q#f'],
+            'invalid port (1)' => ['//host:port/path?query#fragment'],
+            'invalid port (2)' => ['//host:892358/path?query#fragment'],
+            'invalid ipv6 host (1)' => ['scheme://[127.0.0.1]/path?query#fragment'],
+            'invalid ipv6 host (2)' => ['scheme://]::1[/path?query#fragment'],
+            'invalid ipv6 host (3)' => ['scheme://[::1|/path?query#fragment'],
+            'invalid ipv6 host (4)' => ['scheme://|::1]/path?query#fragment'],
+            'invalid ipv6 host (5)' => ['scheme://[::1]./path?query#fragment'],
+            'invalid ipv6 host (6)' => ['scheme://[[::1]]:80/path?query#fragment'],
+            'invalid ipv6 scoped (1)' => ['scheme://[::1%25%23]/path?query#fragment'],
+            'invalid ipv6 scoped (2)' => ['scheme://[fe80::1234::%251]/path?query#fragment'],
             'invalid host too long' => ['scheme://'.implode('.', array_fill(0, 128, 'a'))],
             'invalid char on URI' => ["scheme://host/path/\r\n/toto"],
-            'invalid host and URI' => ['2620:0:1cfe:face:b00c::3'],
-            'invalid scheme and path' => ['0scheme://host/path?query#fragment'],
+            'invalid path only URI' => ['2620:0:1cfe:face:b00c::3'],
             'invalid path PHP bug #72811' => ['[::1]:80'],
+        ];
+    }
+
+    /**
+     * @dataProvider testValidHost
+     */
+    public function testHost($host, $expected)
+    {
+        $this->assertSame($expected, $this->parser->isHost($host));
+    }
+
+    public function testValidHost()
+    {
+        return [
+            'RFC3986 registered name' => ['bebe.be', true],
+            'RFC3987 registered name' => ['bébé.bé', true],
+            'IPv4 host' => ['127.0.0.1', true],
+            'IPv4 like host' => ['9.2.3', true],
+            'IPv6 host' => ['[::]', true],
+            'invalid IPv6 host (1)' => ['::1', false],
+            'invalid IPv6 host (1)' => ['[fe80::1234::%251]', false],
+            'invalid IPv6 host (2)' => ['[127.0.0.1]', false],
+            'invalid IPv6 host (3)' => [']::1[', false],
+            'invalid IPv6 host (4)' => ['[::1|', false],
+            'invalid IPv6 host (5)' => ['|::1]', false],
+            'invalid IPv6 host (6)' => ['[[::1]]', false],
+            'invalid IPv6 host (7)' => ['[::1%25%23]', false],
+            'empty host' => ['', true],
         ];
     }
 }
