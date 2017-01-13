@@ -2,6 +2,24 @@
 
 All Notable changes to `league-uri-parser` will be documented in this file
 
+## 1.0.1 - 2017-01-13
+
+### Added
+
+- None
+
+### Fixed
+
+- PHP version constraint in composer.json
+
+### Deprecated
+
+- None
+
+### Removed
+
+- None
+
 ## 1.0.0 - 2017-01-04
 
 ### Added
