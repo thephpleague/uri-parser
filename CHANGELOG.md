@@ -2,6 +2,24 @@
 
 All Notable changes to `league-uri-parser` will be documented in this file
 
+## Next
+
+### Added
+
+- None
+
+### Fixed
+
+- Notice when an invalid host starts with an empty label
+
+### Deprecated
+
+- None
+
+### Removed
+
+- None
+
 ## 1.0.1 - 2017-01-13
 
 ### Added

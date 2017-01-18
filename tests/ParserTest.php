@@ -662,6 +662,7 @@ class ParserTest extends TestCase
             'invalid ipv6 scoped (1)' => ['scheme://[::1%25%23]/path?query#fragment'],
             'invalid ipv6 scoped (2)' => ['scheme://[fe80::1234::%251]/path?query#fragment'],
             'invalid host too long' => ['scheme://'.implode('.', array_fill(0, 128, 'a'))],
+            'invalid host with starting empty label' => ['scheme://.example.com'],
             'invalid char on URI' => ["scheme://host/path/\r\n/toto"],
             'invalid path only URI' => ['2620:0:1cfe:face:b00c::3'],
             'invalid path PHP bug #72811' => ['[::1]:80'],

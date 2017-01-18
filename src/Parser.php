@@ -347,6 +347,10 @@ class Parser
      */
     protected function isHostLabel(string $label): bool
     {
+        if ('' == $label) {
+            return false;
+        }
+
         $pos = strlen($label);
         $delimiters = $label[0].$label[$pos - 1];
 
