@@ -37,6 +37,9 @@
             "LeagueTest\\Uri\\": "tests"
         }
     },
+    "suggest": {
+        "league/uri-schemes": "Allow validating and normalizing URI parsing results"
+    },
     "scripts": {
         "test": "phpunit --coverage-text; php-cs-fixer fix -v --diff --dry-run;",
         "phpunit": "phpunit --coverage-text",
