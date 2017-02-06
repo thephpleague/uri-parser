@@ -2,6 +2,24 @@
 
 All Notable changes to `league-uri-parser` will be documented in this file
 
+## 1.0.3 - 2017-02-06
+
+### Added
+
+- None
+
+### Fixed
+
+- idn_to_ascii uses `INTL_IDNA_VARIANT_UTS46` as `INTL_IDNA_VARIANT_2003` will be deprecated
+
+### Deprecated
+
+- None
+
+### Removed
+
+- None
+
 ## 1.0.2 - 2017-01-19
 
 ### Added

@@ -333,10 +333,28 @@ class Parser
             $host = substr($host, 0, -1);
         }
 
-        $labels = array_map('idn_to_ascii', explode('.', $host));
+        $labels = array_map([$this, 'toAscii'], explode('.', $host));
 
         return 127 > count($labels) && $labels === array_filter($labels, [$this, 'isHostLabel']);
     }
+
+    /**
+     * Convert domain name to IDNA ASCII form.
+     *
+     * @param  string $label
+     *
+     * @return string
+     */
+    protected function toAscii(string $label)
+    {
+        $res = idn_to_ascii($label, 0, INTL_IDNA_VARIANT_UTS46);
+        if (false !== $res) {
+            return $res;
+        }
+
+        return '';
+    }
+
 
     /**
      * Returns whether the host label is valid

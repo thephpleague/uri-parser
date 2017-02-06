@@ -12,26 +12,17 @@ use PHPUnit\Framework\TestCase;
 class ParserTest extends TestCase
 {
     /**
-     * @var Parser
-     */
-    protected $parser;
-
-    protected function setUp()
-    {
-        $this->parser = new Parser();
-    }
-
-    /**
-     * @dataProvider testValidURI
+     * @dataProvider validUriProvider
      * @param $uri
      * @param $expected
      */
     public function testParseSucced($uri, $expected)
     {
-        $this->assertSame($expected, $this->parser->__invoke($uri));
+        $components = (new Parser())($uri);
+        $this->assertSame($expected, $components);
     }
 
-    public function testValidURI()
+    public function validUriProvider()
     {
         return [
             'complete URI' => [
@@ -86,7 +77,6 @@ class ParserTest extends TestCase
                     'fragment' => null,
                 ],
             ],
-
             'URI without userinfo' => [
                 'scheme://HoSt:81/path?query#fragment',
                 [
@@ -637,16 +627,16 @@ class ParserTest extends TestCase
     }
 
     /**
-     * @dataProvider testInvalidURI
+     * @dataProvider invalidUriProvider
      * @param string $uri
      */
     public function testParseFailed($uri)
     {
-        $this->setExpectedException(Exception::class);
-        $this->parser->__invoke($uri);
+        $this->expectException(Exception::class);
+        (new Parser())($uri);
     }
 
-    public function testInvalidURI()
+    public function invalidUriProvider()
     {
         return [
             'invalid scheme (1)' => ['0scheme://host/path?query#fragment'],
@@ -670,14 +660,14 @@ class ParserTest extends TestCase
     }
 
     /**
-     * @dataProvider testValidHost
+     * @dataProvider validHostProvider
      */
     public function testHost($host, $expected)
     {
-        $this->assertSame($expected, $this->parser->isHost($host));
+        $this->assertSame($expected, (new Parser())->isHost($host));
     }
 
-    public function testValidHost()
+    public function validHostProvider()
     {
         return [
             'RFC3986 registered name' => ['bebe.be', true],
