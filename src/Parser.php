@@ -341,7 +341,7 @@ class Parser
     /**
      * Convert domain name to IDNA ASCII form.
      *
-     * @param  string $label
+     * @param string $label
      *
      * @return string
      */

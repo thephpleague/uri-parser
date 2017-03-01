@@ -2,6 +2,24 @@
 
 All Notable changes to `league-uri-parser` will be documented in this file
 
+## 1.0.4 - 2017-03-01
+
+### Added
+
+- None
+
+### Fixed
+
+- [issue #3](https://github.com/thephpleague/uri-parser/issues/3) the `-` (hyphen) character is a valid one for a scheme.
+
+### Deprecated
+
+- None
+
+### Removed
+
+- None
+
 ## 1.0.3 - 2017-02-06
 
 ### Added
