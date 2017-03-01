@@ -623,6 +623,19 @@ class ParserTest extends TestCase
                     'fragment' => null,
                 ],
             ],
+            'scheme with hyphen' => [
+                'android-app://org.wikipedia/http/en.m.wikipedia.org/wiki/The_Hitchhiker%27s_Guide_to_the_Galaxy',
+                [
+                    'scheme' => 'android-app',
+                    'user' => null,
+                    'pass' => null,
+                    'host' => 'org.wikipedia',
+                    'port' => null,
+                    'path' => '/http/en.m.wikipedia.org/wiki/The_Hitchhiker%27s_Guide_to_the_Galaxy',
+                    'query' => null,
+                    'fragment' => null,
+                ],
+            ],
         ];
     }
 
