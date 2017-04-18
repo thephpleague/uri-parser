@@ -2,6 +2,24 @@
 
 All Notable changes to `league-uri-parser` will be documented in this file
 
+## Next
+
+### Added
+
+- None
+
+### Fixed
+
+- [issue #5](https://github.com/thephpleague/uri-parser/issues/5) Improve `Parser::isHost` validation of regsitered name
+
+### Deprecated
+
+- None
+
+### Removed
+
+- None
+
 ## 1.0.4 - 2017-03-01
 
 ### Added

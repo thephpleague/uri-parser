@@ -682,6 +682,8 @@ class ParserTest extends TestCase
 
     public function validHostProvider()
     {
+        $long_label = implode('.', array_fill(0, 62, 'a'));
+
         return [
             'RFC3986 registered name' => ['bebe.be', true],
             'RFC3987 registered name' => ['bébé.bé', true],
@@ -697,6 +699,11 @@ class ParserTest extends TestCase
             'invalid IPv6 host (6)' => ['[[::1]]', false],
             'invalid IPv6 host (7)' => ['[::1%25%23]', false],
             'empty host' => ['', true],
+            'non idn like host #issue 5' => ['r5---sn-h0jeen7y.domain.com', true],
+            'invalid host: label too long' => [implode('', array_fill(0, 64, 'a')).'.com', false],
+            'invalid host: host too long' => ["$long_label.$long_label.$long_label. $long_label.$long_label", false],
+            'invalid host: invalid label according to RFC3986' => ['www.fußball.com-', false],
+            'invalid host: host contains space' => ['re view.com', false],
         ];
     }
 }
