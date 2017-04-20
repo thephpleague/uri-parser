@@ -13,8 +13,8 @@ class ParserTest extends TestCase
 {
     /**
      * @dataProvider validUriProvider
-     * @param $uri
-     * @param $expected
+     * @param string $uri
+     * @param array  $expected
      */
     public function testParseSucced($uri, $expected)
     {
@@ -674,6 +674,8 @@ class ParserTest extends TestCase
 
     /**
      * @dataProvider validHostProvider
+     * @param string $host
+     * @param bool   $expected
      */
     public function testHost($host, $expected)
     {

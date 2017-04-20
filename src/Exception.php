@@ -79,7 +79,7 @@ class Exception extends InvalidArgumentException
     /**
      * Returns a new Instance from an error in port validation
      *
-     * @param mixed $port
+     * @param string|int $port
      *
      * @return static
      */
