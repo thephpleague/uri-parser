@@ -385,14 +385,12 @@ class Parser
      *
      * @return bool
      */
-    protected function isHostLabel($label): bool
+    protected function isHostLabel(string $label): bool
     {
-        if (!is_string($label) || '' == $label || 63 < strlen($label)) {
-            return false;
-        }
-
-        return 2 === strspn($label[0].substr($label, -1, 1), self::LABEL_VALID_STARTING_CHARS)
-            && strlen($label) === strspn($label, self::LABEL_VALID_STARTING_CHARS.'-');
+        return '' != $label
+            && 63 >= strlen($label)
+            && strlen($label) == strspn($label, self::LABEL_VALID_STARTING_CHARS.'-')
+            && 2 == strspn($label[0].substr($label, -1, 1), self::LABEL_VALID_STARTING_CHARS);
     }
 
     /**

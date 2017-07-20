@@ -706,6 +706,8 @@ class ParserTest extends TestCase
             'invalid host: host too long' => ["$long_label.$long_label.$long_label. $long_label.$long_label", false],
             'invalid host: invalid label according to RFC3986' => ['www.fußball.com-', false],
             'invalid host: host contains space' => ['re view.com', false],
+            'ascii label with multiple dash #issue 7 (1)' => ['tw--services.co.uk', true],
+            'ascii label with multiple dash #issue 7 (2)' => ['om--tat-sat.co.uk', true],
         ];
     }
 }
