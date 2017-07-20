@@ -86,22 +86,15 @@ class Parser
      */
     public function __invoke(string $uri): array
     {
-        if ('' == $uri) {
-            return self::URI_COMPONENTS;
-        }
+        //simple URI which do not need any parsing
+        static $simple_uri = [
+            '' => [],
+            '/' => ['path' => '/'],
+            '//' => ['host' => ''],
+        ];
 
-        if ('/' == $uri) {
-            $components = self::URI_COMPONENTS;
-            $components['path'] = '/';
-
-            return $components;
-        }
-
-        if ('//' == $uri) {
-            $components = self::URI_COMPONENTS;
-            $components['host'] = '';
-
-            return $components;
+        if (isset($simple_uri[$uri])) {
+            return array_merge(self::URI_COMPONENTS, $simple_uri[$uri]);
         }
 
         if (strlen($uri) !== strcspn($uri, self::INVALID_URI_CHARS)) {
@@ -169,30 +162,26 @@ class Parser
      *
      * @return array
      */
-    private function parseSchemeSpecificPart(string $uri): array
+    protected function parseSchemeSpecificPart(string $uri): array
     {
         //We remove the authority delimiter
         $remaining_uri = (string) substr($uri, 2);
 
         //Parsing is done from the right upmost part to the left
-        //1 - detect the fragment part if any
+        //1 - detect fragment, query and path part if any
         $parts = explode('#', $remaining_uri, 2);
         $remaining_uri = array_shift($parts);
         $components = self::URI_COMPONENTS;
         $components['fragment'] = array_shift($parts);
-
-        //2 - detect the query part if any
         $parts = explode('?', $remaining_uri, 2);
         $remaining_uri = array_shift($parts);
         $components['query'] = array_shift($parts);
-
-        //3 - detect the path part if any
         if (false !== ($pos = strpos($remaining_uri, '/'))) {
             $components['path'] = substr($remaining_uri, $pos);
             $remaining_uri = substr($remaining_uri, 0, $pos);
         }
 
-        //4 - The $remaining_uri represents the authority part
+        //2 - The $remaining_uri represents the authority part
         //if the authority part is empty parsing is simplified
         if ('' === $remaining_uri) {
             $components['host'] = '';
@@ -204,15 +193,11 @@ class Parser
         $parts = explode('@', $remaining_uri, 2);
         $hostname = array_pop($parts);
         $user_info = array_pop($parts);
-
-        //4.1 - Parsing user information
         if (null !== $user_info) {
             $parts = explode(':', $user_info, 2);
             $components['user'] = array_shift($parts);
             $components['pass'] = array_shift($parts);
         }
-
-        //4.2 - Parsing the hostname
         list($components['host'], $components['port']) = $this->parseHostname($hostname);
 
         return $components;
@@ -225,7 +210,7 @@ class Parser
      *
      * @return array
      */
-    private function parseHostname(string $hostname): array
+    protected function parseHostname(string $hostname): array
     {
         if (false === strpos($hostname, '[')) {
             $parts = explode(':', $hostname, 2);
@@ -294,7 +279,7 @@ class Parser
      */
     protected function isIpv6Host(string $ipv6): bool
     {
-        if ('[' !== substr($ipv6, 0, 1) || ']' !== substr($ipv6, -1, 1)) {
+        if ('][' !== substr($ipv6.$ipv6, strlen($ipv6) - 1, 2)) {
             return false;
         }
 
@@ -304,7 +289,7 @@ class Parser
         }
 
         $scope = rawurldecode(substr($ipv6, $pos));
-        if (strlen($scope) !== strcspn($scope, '?#@[]'.self::INVALID_URI_CHARS)) {
+        if (strlen($scope) !== strcspn($scope, '?#@[]')) {
             return false;
         }
 
@@ -313,7 +298,7 @@ class Parser
             return false;
         }
 
-        $reducer = function ($carry, $char) {
+        $reducer = function (string $carry, string $char): string {
             return $carry.str_pad(decbin(ord($char)), 8, '0', STR_PAD_LEFT);
         };
 
@@ -387,12 +372,10 @@ class Parser
      */
     protected function isHostLabel($label): bool
     {
-        if (!is_string($label) || '' == $label || 63 < strlen($label)) {
-            return false;
-        }
-
-        return 2 === strspn($label[0].substr($label, -1, 1), self::LABEL_VALID_STARTING_CHARS)
-            && strlen($label) === strspn($label, self::LABEL_VALID_STARTING_CHARS.'-');
+        return '' != $label
+            && 63 >= strlen($label)
+            && strlen($label) == strspn($label, self::LABEL_VALID_STARTING_CHARS.'-')
+            && 2 == strspn($label[0].substr($label, -1, 1), self::LABEL_VALID_STARTING_CHARS);
     }
 
     /**
@@ -406,7 +389,7 @@ class Parser
      *
      * @return null|int
      */
-    private function filterPort($port)
+    protected function filterPort($port)
     {
         if ('' == $port) {
             return null;
@@ -454,7 +437,7 @@ class Parser
      *
      * @return array
      */
-    private function parsePathQueryAndFragment(string $uri): array
+    protected function parsePathQueryAndFragment(string $uri): array
     {
         //No scheme is present so we ensure that the path respects RFC3986
         if (false !== ($pos = strpos($uri, ':')) && false === strpos(substr($uri, 0, $pos), '/')) {
@@ -506,7 +489,7 @@ class Parser
      *
      * @return array
      */
-    private function fallbackParser(string $uri): array
+    protected function fallbackParser(string $uri): array
     {
         //1 - we split the URI on the first detected colon character
         $parts = explode(':', $uri, 2);
@@ -527,18 +510,16 @@ class Parser
             return $this->parsePathQueryAndFragment($uri);
         }
 
+        $components = self::URI_COMPONENTS;
+        $components['scheme'] = $scheme;
+
         //2.2 - if no scheme specific part is detect parsing is finished
         if ('' == $remaining_uri) {
-            $components = self::URI_COMPONENTS;
-            $components['scheme'] = $scheme;
-
             return $components;
         }
 
         //2.3 - if the scheme specific part is a double forward slash
         if ('//' === $remaining_uri) {
-            $components = self::URI_COMPONENTS;
-            $components['scheme'] = $scheme;
             $components['host'] = '';
 
             return $components;
@@ -554,9 +535,6 @@ class Parser
         }
 
         //2.5 - Parsing is done from the right upmost part to the left from the scheme specific part
-        $components = self::URI_COMPONENTS;
-        $components['scheme'] = $scheme;
-
         //2.5.1 - detect the fragment part if any
         $parts = explode('#', $remaining_uri, 2);
         $remaining_uri = array_shift($parts);
