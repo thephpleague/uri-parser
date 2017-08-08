@@ -2,6 +2,26 @@
 
 All Notable changes to `league-uri-parser` will be documented in this file
 
+## 1.1.0 - TBD
+
+### Added
+
+- `League\Uri\build`   function de build and URI from the result from `League\Uri\Parser::__invoke` or `parse_url`
+- `League\Uri\parse`   function version of `League\Uri\Parser::__invoke`
+- `League\Uri\is_host` function version of `League\Uri\Parser::isHost`
+
+### Fixed
+
+- None
+
+### Deprecated
+
+- None
+
+### Removed
+
+- None
+
 ## 1.0.5 - 2017-04-19
 
 ### Added

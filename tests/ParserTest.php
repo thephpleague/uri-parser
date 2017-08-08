@@ -5,6 +5,9 @@ namespace LeagueTest\Uri;
 use League\Uri\Exception;
 use League\Uri\Parser;
 use PHPUnit\Framework\TestCase;
+use function League\Uri\build;
+use function League\Uri\is_host;
+use function League\Uri\parse;
 
 /**
  * @group parser
@@ -18,8 +21,7 @@ class ParserTest extends TestCase
      */
     public function testParseSucced($uri, $expected)
     {
-        $components = (new Parser())($uri);
-        $this->assertSame($expected, $components);
+        $this->assertSame($expected, parse($uri));
     }
 
     public function validUriProvider()
@@ -646,7 +648,7 @@ class ParserTest extends TestCase
     public function testParseFailed($uri)
     {
         $this->expectException(Exception::class);
-        (new Parser())($uri);
+        parse($uri);
     }
 
     public function invalidUriProvider()
@@ -679,7 +681,7 @@ class ParserTest extends TestCase
      */
     public function testHost($host, $expected)
     {
-        $this->assertSame($expected, (new Parser())->isHost($host));
+        $this->assertSame($expected, is_host($host));
     }
 
     public function validHostProvider()
@@ -708,6 +710,210 @@ class ParserTest extends TestCase
             'non idn like host #issue 5 (1)' => ['r5---sn-h0jeen7y.domain.com', true],
             'non idn like host #issue 5 (2)' => ['tw--services.co.uk', true],
             'non idn like host #issue 5 (3)' => ['om--tat-sat.co.uk', true],
+        ];
+    }
+
+    /**
+     * @dataProvider buildUriProvider
+     * @param string $uri
+     * @param string $expected
+     */
+    public function testBuild($uri, $expected)
+    {
+        $this->assertSame($expected, build(parse($uri)));
+    }
+
+    public function buildUriProvider()
+    {
+        return [
+            'complete URI' => [
+                'scheme://user:pass@host:81/path?query#fragment',
+                'scheme://user@host:81/path?query#fragment',
+            ],
+            'URI is not normalized' => [
+                'ScheMe://user:pass@HoSt:81/path?query#fragment',
+                'ScheMe://user@HoSt:81/path?query#fragment',
+            ],
+            'URI without scheme' => [
+                '//user:pass@HoSt:81/path?query#fragment',
+                '//user@HoSt:81/path?query#fragment',
+            ],
+            'URI without empty authority only' => [
+                '//',
+                '//',
+            ],
+            'URI without userinfo' => [
+                'scheme://HoSt:81/path?query#fragment',
+                'scheme://HoSt:81/path?query#fragment',
+            ],
+            'URI with empty userinfo' => [
+                'scheme://@HoSt:81/path?query#fragment',
+                'scheme://@HoSt:81/path?query#fragment',
+            ],
+            'URI without port' => [
+                'scheme://user:pass@host/path?query#fragment',
+                'scheme://user@host/path?query#fragment',
+            ],
+            'URI with an empty port' => [
+                'scheme://user:pass@host:/path?query#fragment',
+                'scheme://user@host/path?query#fragment',
+            ],
+            'URI without user info and port' => [
+                'scheme://host/path?query#fragment',
+                'scheme://host/path?query#fragment',
+            ],
+            'URI with host IP' => [
+                'scheme://10.0.0.2/p?q#f',
+                'scheme://10.0.0.2/p?q#f',
+            ],
+            'URI with scoped IP' => [
+                'scheme://[fe80:1234::%251]/p?q#f',
+                'scheme://[fe80:1234::%251]/p?q#f',
+            ],
+            'URI without authority' => [
+                'scheme:path?query#fragment',
+                'scheme:path?query#fragment',
+            ],
+            'URI without authority and scheme' => [
+                '/path',
+                '/path',
+            ],
+            'URI with empty host' => [
+                'scheme:///path?query#fragment',
+                'scheme:///path?query#fragment',
+            ],
+            'URI with empty host and without scheme' => [
+                '///path?query#fragment',
+                '///path?query#fragment',
+            ],
+            'URI without path' => [
+                'scheme://[FEDC:BA98:7654:3210:FEDC:BA98:7654:3210]?query#fragment',
+                'scheme://[FEDC:BA98:7654:3210:FEDC:BA98:7654:3210]?query#fragment',
+            ],
+            'URI without path and scheme' => [
+                '//[FEDC:BA98:7654:3210:FEDC:BA98:7654:3210]?query#fragment',
+                '//[FEDC:BA98:7654:3210:FEDC:BA98:7654:3210]?query#fragment',
+            ],
+            'URI without scheme with IPv6 host and port' => [
+                '//[FEDC:BA98:7654:3210:FEDC:BA98:7654:3210]:42?query#fragment',
+                '//[FEDC:BA98:7654:3210:FEDC:BA98:7654:3210]:42?query#fragment',
+            ],
+            'complete URI without scheme' => [
+                '//user@[FEDC:BA98:7654:3210:FEDC:BA98:7654:3210]:42?q#f',
+                '//user@[FEDC:BA98:7654:3210:FEDC:BA98:7654:3210]:42?q#f',
+            ],
+            'URI without authority and query' => [
+                'scheme:path#fragment',
+                'scheme:path#fragment',
+            ],
+            'URI with empty query' => [
+                'scheme:path?#fragment',
+                'scheme:path?#fragment',
+            ],
+            'URI with query only' => [
+                '?query',
+                '?query',
+            ],
+            'URI without fragment' => [
+                'tel:05000',
+                'tel:05000',
+            ],
+            'URI with empty fragment' => [
+                'scheme:path#',
+                'scheme:path#',
+            ],
+            'URI with fragment only' => [
+                '#fragment',
+                '#fragment',
+            ],
+            'URI with empty fragment only' => [
+                '#',
+                '#',
+            ],
+            'URI without authority 2' => [
+                'path#fragment',
+                'path#fragment',
+            ],
+            'URI with empty query and fragment' => [
+                '?#',
+                '?#',
+            ],
+            'URI with absolute path' => [
+                '/?#',
+                '/?#',
+            ],
+            'URI with absolute authority' => [
+                'https://thephpleague.com./p?#f',
+                'https://thephpleague.com./p?#f',
+            ],
+            'URI with absolute path only' => [
+                '/',
+                '/',
+            ],
+            'URI with empty query only' => [
+                '?',
+                '?',
+            ],
+            'relative path' => [
+                '../relative/path',
+                '../relative/path',
+            ],
+            'complex authority' => [
+                'http://a_.!~*\'(-)n0123Di%25%26:pass;:&=+$,word@www.zend.com',
+                'http://a_.!~*\'(-)n0123Di%25%26@www.zend.com',
+            ],
+            'complex authority without scheme' => [
+                '//a_.!~*\'(-)n0123Di%25%26:pass;:&=+$,word@www.zend.com',
+                '//a_.!~*\'(-)n0123Di%25%26@www.zend.com',
+            ],
+            'single word is a path' => [
+                'http',
+                'http',
+            ],
+            'URI scheme with an empty authority' => [
+                'http://',
+                'http://',
+            ],
+            'single word is a path, no' => [
+                'http:::/path',
+                'http:::/path',
+            ],
+            'fragment with pseudo segment' => [
+                'http://example.com#foo=1/bar=2',
+                'http://example.com#foo=1/bar=2',
+            ],
+            'empty string' => [
+                '',
+                '',
+            ],
+            'complex URI' => [
+                'htà+d/s:totot',
+                'htà+d/s:totot',
+            ],
+            'scheme only URI' => [
+                'http:',
+                'http:',
+            ],
+            'RFC3986 LDAP example' => [
+                'ldap://[2001:db8::7]/c=GB?objectClass?one',
+                'ldap://[2001:db8::7]/c=GB?objectClass?one',
+            ],
+            'RFC3987 example' => [
+                'http://bébé.bé./有词法别名.zh',
+                'http://bébé.bé./有词法别名.zh',
+            ],
+            'colon detection respect RFC3986 (1)' => [
+                'http://example.org/hello:12?foo=bar#test',
+                'http://example.org/hello:12?foo=bar#test',
+            ],
+            'colon detection respect RFC3986 (2)' => [
+                '/path/to/colon:34',
+                '/path/to/colon:34',
+            ],
+            'scheme with hyphen' => [
+                'android-app://org.wikipedia/http/en.m.wikipedia.org/wiki/The_Hitchhiker%27s_Guide_to_the_Galaxy',
+                'android-app://org.wikipedia/http/en.m.wikipedia.org/wiki/The_Hitchhiker%27s_Guide_to_the_Galaxy',
+            ],
         ];
     }
 }
