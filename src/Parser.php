@@ -89,6 +89,9 @@ class Parser
         //simple URI which do not need any parsing
         static $simple_uri = [
             '' => [],
+            '#' => ['fragment' => ''],
+            '?' => ['query' => ''],
+            '?#' => ['query' => '', 'fragment' => ''],
             '/' => ['path' => '/'],
             '//' => ['host' => ''],
         ];
@@ -115,9 +118,7 @@ class Parser
         //The URI is made of the query and fragment
         if ('?' == $first_char) {
             $components = self::URI_COMPONENTS;
-            $parts = explode('#', substr($uri, 1), 2);
-            $components['query'] = array_shift($parts);
-            $components['fragment'] = array_shift($parts);
+            list($components['query'], $components['fragment']) = explode('#', substr($uri, 1), 2) + [null, null];
 
             return $components;
         }
@@ -166,16 +167,12 @@ class Parser
     {
         //We remove the authority delimiter
         $remaining_uri = (string) substr($uri, 2);
+        $components = self::URI_COMPONENTS;
 
         //Parsing is done from the right upmost part to the left
         //1 - detect fragment, query and path part if any
-        $parts = explode('#', $remaining_uri, 2);
-        $remaining_uri = array_shift($parts);
-        $components = self::URI_COMPONENTS;
-        $components['fragment'] = array_shift($parts);
-        $parts = explode('?', $remaining_uri, 2);
-        $remaining_uri = array_shift($parts);
-        $components['query'] = array_shift($parts);
+        list($remaining_uri, $components['fragment']) = explode('#', $remaining_uri, 2) + [null, null];
+        list($remaining_uri, $components['query']) = explode('?', $remaining_uri, 2) + [null, null];
         if (false !== ($pos = strpos($remaining_uri, '/'))) {
             $components['path'] = substr($remaining_uri, $pos);
             $remaining_uri = substr($remaining_uri, 0, $pos);
@@ -194,9 +191,7 @@ class Parser
         $hostname = array_pop($parts);
         $user_info = array_pop($parts);
         if (null !== $user_info) {
-            $parts = explode(':', $user_info, 2);
-            $components['user'] = array_shift($parts);
-            $components['pass'] = array_shift($parts);
+            list($components['user'], $components['pass']) = explode(':', $user_info, 2) + [null, null];
         }
         list($components['host'], $components['port']) = $this->parseHostname($hostname);
 
@@ -213,12 +208,9 @@ class Parser
     protected function parseHostname(string $hostname): array
     {
         if (false === strpos($hostname, '[')) {
-            $parts = explode(':', $hostname, 2);
+            list($host, $port)= explode(':', $hostname, 2) + [null, null];
 
-            return [
-                $this->filterHost(array_shift($parts)),
-                $this->filterPort(array_shift($parts)),
-            ];
+            return [$this->filterHost($host), $this->filterPort($port)];
         }
 
         $delimiter_offset = strpos($hostname, ']') + 1;
@@ -444,17 +436,14 @@ class Parser
             throw Exception::createFromInvalidPath($uri);
         }
 
+        $components = self::URI_COMPONENTS;
+
         //Parsing is done from the right upmost part to the left
         //1 - detect the fragment part if any
-        $parts = explode('#', $uri, 2);
-        $remaining_uri = array_shift($parts);
-        $components = self::URI_COMPONENTS;
-        $components['fragment'] = array_shift($parts);
+        list($remaining_uri, $components['fragment']) = explode('#', $uri, 2) + [null, null];
 
         //2 - detect the query and the path part
-        $parts = explode('?', $remaining_uri, 2);
-        $components['path'] = array_shift($parts);
-        $components['query'] = array_shift($parts);
+        list($components['path'], $components['query']) = explode('?', $remaining_uri, 2) + [null, null];
 
         return $components;
     }
@@ -536,14 +525,10 @@ class Parser
 
         //2.5 - Parsing is done from the right upmost part to the left from the scheme specific part
         //2.5.1 - detect the fragment part if any
-        $parts = explode('#', $remaining_uri, 2);
-        $remaining_uri = array_shift($parts);
-        $components['fragment'] = array_shift($parts);
+        list($remaining_uri, $components['fragment']) = explode('#', $remaining_uri, 2) + [null, null];
 
         //2.5.2 - detect the part and query part if any
-        $parts = explode('?', $remaining_uri, 2);
-        $components['path'] = array_shift($parts);
-        $components['query'] = array_shift($parts);
+        list($components['path'], $components['query']) = explode('?', $remaining_uri, 2) + [null, null];
 
         return $components;
     }
