@@ -2,6 +2,7 @@
 
 namespace LeagueTest\Uri;
 
+use League\Uri;
 use League\Uri\Exception;
 use League\Uri\Parser;
 use PHPUnit\Framework\TestCase;

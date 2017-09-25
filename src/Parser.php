@@ -6,7 +6,7 @@
  * @subpackage League\Uri
  * @author     Ignace Nyamagana Butera <nyamsprod@gmail.com>
  * @license    https://github.com/thephpleague/uri-parser/blob/master/LICENSE (MIT License)
- * @version    1.0.5
+ * @version    1.1.0
  * @link       https://github.com/thephpleague/uri-parser/
  *
  * For the full copyright and license information, please view the LICENSE
@@ -174,8 +174,8 @@ class Parser
         list($remaining_uri, $components['fragment']) = explode('#', $remaining_uri, 2) + [null, null];
         list($remaining_uri, $components['query']) = explode('?', $remaining_uri, 2) + [null, null];
         if (false !== ($pos = strpos($remaining_uri, '/'))) {
-            $components['path'] = substr($remaining_uri, $pos);
-            $remaining_uri = substr($remaining_uri, 0, $pos);
+            list($remaining_uri, $components['path']) = explode('/', $remaining_uri, 2) + [null, null];
+            $components['path'] = '/'.$components['path'];
         }
 
         //2 - The $remaining_uri represents the authority part
