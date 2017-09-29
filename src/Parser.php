@@ -42,6 +42,54 @@ class Parser
     ];
 
     /**
+     * Returns whether a Scheme is valid.
+     *
+     * @see https://tools.ietf.org/html/rfc3986#section-3.1
+     *
+     * @param string $scheme
+     *
+     * @return bool
+     */
+    public function isScheme(string $scheme): bool
+    {
+        return '' === $scheme
+            || (strlen($scheme) === strspn($scheme, self::SCHEME_VALID_CHARS)
+                && false !== strpos(self::SCHEME_VALID_STARTING_CHARS, $scheme[0]));
+    }
+
+    /**
+     * Returns whether a Host is valid.
+     *
+     * @see https://tools.ietf.org/html/rfc3986#section-3.2.2
+     *
+     * @param string $host
+     *
+     * @return bool
+     */
+    public function isHost(string $host): bool
+    {
+        return '' === $host
+            || filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)
+            || $this->isIpv6Host($host)
+            || $this->isRegisteredName($host);
+    }
+
+    /**
+     * Returns whether a port is valid.
+     *
+     * @see https://tools.ietf.org/html/rfc3986#section-3.2.2
+     *
+     * @param mixed $port
+     *
+     * @return bool
+     */
+    public function isPort($port): bool
+    {
+        return in_array($port, [null, ''], true)
+            || filter_var($port, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 65535]]);
+    }
+
+    /**
      * Parse an URI string into its components.
      *
      * This method parses a URL and returns an associative array containing any
@@ -208,7 +256,7 @@ class Parser
     protected function parseHostname(string $hostname): array
     {
         if (false === strpos($hostname, '[')) {
-            list($host, $port)= explode(':', $hostname, 2) + [null, null];
+            list($host, $port) = explode(':', $hostname, 2) + [null, null];
 
             return [$this->filterHost($host), $this->filterPort($port)];
         }
@@ -240,23 +288,6 @@ class Parser
         }
 
         throw Exception::createFromInvalidHost($host);
-    }
-
-    /**
-     * Returns whether a Host is valid.
-     *
-     * @see https://tools.ietf.org/html/rfc3986#section-3.2.2
-     *
-     * @param string $host
-     *
-     * @return bool
-     */
-    public function isHost(string $host): bool
-    {
-        return '' === $host
-            || filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)
-            || $this->isIpv6Host($host)
-            || $this->isRegisteredName($host);
     }
 
     /**
@@ -375,7 +406,7 @@ class Parser
      *
      * An exception is raised for ports outside the established TCP and UDP port ranges.
      *
-     * @param string|null $port the port number
+     * @param mixed $port the port number
      *
      * @throws Exception If the port number is invalid.
      *
@@ -383,21 +414,17 @@ class Parser
      */
     protected function filterPort($port)
     {
-        if ('' == $port) {
+        if (in_array($port, [null, false, ''], true)) {
             return null;
         }
 
-        $formatted_port = filter_var($port, FILTER_VALIDATE_INT, ['options' => [
-            'min_range' => 1,
-            'max_range' => 65535,
-        ]]);
-
-        if ($formatted_port) {
-            return $formatted_port;
+        if (!$this->isPort($port)) {
+            throw Exception::createFromInvalidPort($port);
         }
 
-        throw Exception::createFromInvalidPort($port);
+        return filter_var($port, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 65535]]);
     }
+
 
     /**
      * Extract Components from an URI without scheme or authority part.
@@ -494,8 +521,7 @@ class Parser
 
         //2.1 - If the scheme part is invalid the URI may be an URI with a path-noscheme
         //      let's differ the parsing to the Parser::parsePathQueryAndFragment method
-        if (strlen($scheme) !== strspn($scheme, self::SCHEME_VALID_CHARS)
-            || false === strpos(self::SCHEME_VALID_STARTING_CHARS, $scheme[0])) {
+        if (!$this->isScheme($scheme)) {
             return $this->parsePathQueryAndFragment($uri);
         }
 

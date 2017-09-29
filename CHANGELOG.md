@@ -2,6 +2,27 @@
 
 All Notable changes to `league-uri-parser` will be documented in this file
 
+## 1.2.0 - TBD
+
+### Added
+
+- `League\Uri\Parser::isScheme`
+- `League\Uri\is_scheme` function version of `League\Uri\Parser::isScheme`
+- `League\Uri\Parser::isPort`
+- `League\Uri\is_port` function version of `League\Uri\Parser::isPort`
+
+### Fixed
+
+- None
+
+### Deprecated
+
+- None
+
+### Removed
+
+- None
+
 ## 1.1.0 - 2017-09-25
 
 ### Added

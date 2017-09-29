@@ -36,6 +36,44 @@ function is_host(string $host): bool
 }
 
 /**
+ * Returns whether the URI scheme component is valid according to RFC3986.
+ *
+ * @see https://tools.ietf.org/html/rfc3986#section-3.2.3
+ * @see Parser::isPort()
+ *
+ * @param mixed $port
+ *
+ * @return bool
+ */
+function is_port($port): bool
+{
+    static $parser;
+
+    $parser = $parser ?? new Parser();
+
+    return $parser->isPort($port);
+}
+
+/**
+ * Returns whether the URI scheme component is valid according to RFC3986.
+ *
+ * @see https://tools.ietf.org/html/rfc3986#section-3.1
+ * @see Parser::isScheme()
+ *
+ * @param string $scheme
+ *
+ * @return bool
+ */
+function is_scheme(string $scheme): bool
+{
+    static $parser;
+
+    $parser = $parser ?? new Parser();
+
+    return $parser->isScheme($scheme);
+}
+
+/**
  * Parse an URI string into its components.
  *
  * This method parses a URL and returns an associative array containing any

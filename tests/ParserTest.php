@@ -8,6 +8,8 @@ use League\Uri\Parser;
 use PHPUnit\Framework\TestCase;
 use function League\Uri\build;
 use function League\Uri\is_host;
+use function League\Uri\is_port;
+use function League\Uri\is_scheme;
 use function League\Uri\parse;
 
 /**
@@ -711,6 +713,47 @@ class ParserTest extends TestCase
             'non idn like host #issue 5 (1)' => ['r5---sn-h0jeen7y.domain.com', true],
             'non idn like host #issue 5 (2)' => ['tw--services.co.uk', true],
             'non idn like host #issue 5 (3)' => ['om--tat-sat.co.uk', true],
+        ];
+    }
+
+    /**
+     * @dataProvider validPortProvider
+     * @param mixed $port
+     * @param bool  $expected
+     */
+    public function testPort($port, $expected)
+    {
+        $this->assertSame($expected, is_port($port));
+    }
+
+    public function validPortProvider()
+    {
+        return [
+            'int' => [3, true],
+            'string' => ['3', true],
+            'null' => [null, true],
+            'invalid min range' => [0, false],
+            'invalid max range' => [65536, false],
+        ];
+    }
+
+    /**
+     * @dataProvider validSchemeProvider
+     * @param string $scheme
+     * @param bool   $expected
+     */
+    public function testScheme($scheme, $expected)
+    {
+        $this->assertSame($expected, is_scheme($scheme));
+    }
+
+    public function validSchemeProvider()
+    {
+        return [
+            'string' => ['scheme', true],
+            'empty string' => ['', true],
+            'invalid string' => ['tété', false],
+            'with + signe' => ['svn+ssh', true],
         ];
     }
 
