@@ -6,7 +6,7 @@
  * @subpackage League\Uri
  * @author     Ignace Nyamagana Butera <nyamsprod@gmail.com>
  * @license    https://github.com/thephpleague/uri-parser/blob/master/LICENSE (MIT License)
- * @version    1.1.0
+ * @version    1.2.0
  * @link       https://github.com/thephpleague/uri-parser/
  *
  * For the full copyright and license information, please view the LICENSE

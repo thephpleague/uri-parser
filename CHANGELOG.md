@@ -2,7 +2,7 @@
 
 All Notable changes to `league-uri-parser` will be documented in this file
 
-## 1.2.0 - TBD
+## 1.2.0 - 2017-10-20
 
 ### Added
 
