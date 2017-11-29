@@ -41,6 +41,8 @@ class Parser
         'port' => null, 'path' => '', 'query' => null, 'fragment' => null,
     ];
 
+    const SUB_DELIMITERS = '!$&\'()*+,;=';
+
     /**
      * Returns whether a Scheme is valid.
      *
@@ -363,6 +365,8 @@ class Parser
      * Convert a registered name label to its IDNA ASCII form.
      *
      * Conversion is done only if the label contains none valid label characters
+     * if a '%' sud delimiter is detected the label MUST be rawurldecode prior to
+     * making the conversion
      *
      * @param string $label
      *
@@ -370,6 +374,10 @@ class Parser
      */
     protected function toAscii(string $label)
     {
+        if (false !== strpos($label, '%')) {
+            $label = rawurldecode($label);
+        }
+
         if (strlen($label) === strspn($label, self::LABEL_VALID_STARTING_CHARS.'-')) {
             return $label;
         }
@@ -384,10 +392,11 @@ class Parser
      *
      * - not be empty
      * - contain 63 characters or less
-     * - contain alphanumeric ASCII character or a hyphen
-     * - start and end whith an alpha numeric ASCII character
+     * - conform to the following ABNF
      *
-     * @see https://tools.ietf.org/html/rfc1034#section-3.5
+     * reg-name = *( unreserved / pct-encoded / sub-delims )
+     *
+     * @see https://tools.ietf.org/html/rfc3986#section-3.2.2
      *
      * @param string $label
      *
@@ -397,8 +406,7 @@ class Parser
     {
         return '' != $label
             && 63 >= strlen($label)
-            && strlen($label) == strspn($label, self::LABEL_VALID_STARTING_CHARS.'-')
-            && 2 == strspn($label[0].substr($label, -1, 1), self::LABEL_VALID_STARTING_CHARS);
+            && strlen($label) == strspn($label, self::LABEL_VALID_STARTING_CHARS.'-_~'.self::SUB_DELIMITERS);
     }
 
     /**
