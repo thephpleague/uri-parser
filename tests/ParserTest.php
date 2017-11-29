@@ -1,20 +1,10 @@
 <?php
 
-namespace LeagueTest\Uri;
+namespace LeagueTest\Uri\Parser;
 
 use League\Uri;
-use League\Uri\Exception;
-use League\Uri\Parser;
 use PHPUnit\Framework\TestCase;
-use function League\Uri\build;
-use function League\Uri\is_host;
-use function League\Uri\is_port;
-use function League\Uri\is_scheme;
-use function League\Uri\parse;
 
-/**
- * @group parser
- */
 class ParserTest extends TestCase
 {
     /**
@@ -24,7 +14,7 @@ class ParserTest extends TestCase
      */
     public function testParseSucced($uri, $expected)
     {
-        $this->assertSame($expected, parse($uri));
+        $this->assertSame($expected, Uri\parse($uri));
     }
 
     public function validUriProvider()
@@ -650,8 +640,8 @@ class ParserTest extends TestCase
      */
     public function testParseFailed($uri)
     {
-        $this->expectException(Exception::class);
-        parse($uri);
+        $this->expectException(Uri\Exception::class);
+        Uri\parse($uri);
     }
 
     public function invalidUriProvider()
@@ -684,7 +674,7 @@ class ParserTest extends TestCase
      */
     public function testHost($host, $expected)
     {
-        $this->assertSame($expected, is_host($host));
+        $this->assertSame($expected, Uri\is_host($host));
     }
 
     public function validHostProvider()
@@ -700,13 +690,13 @@ class ParserTest extends TestCase
             'IPv4 like host' => ['9.2.3', true],
             'IPv6 host' => ['[::]', true],
             'invalid IPv6 host (1)' => ['::1', false],
-            'invalid IPv6 host (1)' => ['[fe80::1234::%251]', false],
-            'invalid IPv6 host (2)' => ['[127.0.0.1]', false],
-            'invalid IPv6 host (3)' => [']::1[', false],
-            'invalid IPv6 host (4)' => ['[::1|', false],
-            'invalid IPv6 host (5)' => ['|::1]', false],
-            'invalid IPv6 host (6)' => ['[[::1]]', false],
-            'invalid IPv6 host (7)' => ['[::1%25%23]', false],
+            'invalid IPv6 host (2)' => ['[fe80::1234::%251]', false],
+            'invalid IPv6 host (3)' => ['[127.0.0.1]', false],
+            'invalid IPv6 host (4)' => [']::1[', false],
+            'invalid IPv6 host (5)' => ['[::1|', false],
+            'invalid IPv6 host (6)' => ['|::1]', false],
+            'invalid IPv6 host (7)' => ['[[::1]]', false],
+            'invalid IPv6 host (8)' => ['[::1%25%23]', false],
             'empty host' => ['', true],
             'invalid host: label too long' => [implode('', array_fill(0, 64, 'a')).'.com', false],
             'invalid host: host too long' => ["$long_label.$long_label.$long_label. $long_label.$long_label", false],
@@ -724,7 +714,7 @@ class ParserTest extends TestCase
      */
     public function testPort($port, $expected)
     {
-        $this->assertSame($expected, is_port($port));
+        $this->assertSame($expected, Uri\is_port($port));
     }
 
     public function validPortProvider()
@@ -745,7 +735,7 @@ class ParserTest extends TestCase
      */
     public function testScheme($scheme, $expected)
     {
-        $this->assertSame($expected, is_scheme($scheme));
+        $this->assertSame($expected, Uri\is_scheme($scheme));
     }
 
     public function validSchemeProvider()
@@ -765,7 +755,7 @@ class ParserTest extends TestCase
      */
     public function testBuild($uri, $expected)
     {
-        $this->assertSame($expected, build(parse($uri)));
+        $this->assertSame($expected, Uri\build(Uri\parse($uri)));
     }
 
     public function buildUriProvider()

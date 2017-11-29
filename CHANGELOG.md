@@ -2,7 +2,7 @@
 
 All Notable changes to `league-uri-parser` will be documented in this file
 
-## Next - TBD
+## 1.3.0 - TBD
 
 ### Added
 
@@ -10,7 +10,7 @@ All Notable changes to `league-uri-parser` will be documented in this file
 
 ### Fixed
 
-- Fix Host parsing according to RFC3986 rules see [#107](https://github.com/thephpleague/uri/issues/107)
+- Improve Host parsing according to RFC3986 rules see [#107](https://github.com/thephpleague/uri/issues/107)
 
 ### Deprecated
 

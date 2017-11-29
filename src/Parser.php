@@ -6,7 +6,7 @@
  * @subpackage League\Uri
  * @author     Ignace Nyamagana Butera <nyamsprod@gmail.com>
  * @license    https://github.com/thephpleague/uri-parser/blob/master/LICENSE (MIT License)
- * @version    1.2.0
+ * @version    1.3.0
  * @link       https://github.com/thephpleague/uri-parser/
  *
  * For the full copyright and license information, please view the LICENSE
@@ -112,7 +112,7 @@ class Parser
      * of the various components of the URL that are present.
      *
      * <code>
-     * $components = (new Parser())('http://foo@test.example.com:42?query#');
+     * $components = (new Parser())->parse('http://foo@test.example.com:42?query#');
      * var_export($components);
      * //will display
      * array(
@@ -219,7 +219,6 @@ class Parser
      *
      * @see https://tools.ietf.org/html/rfc3986#section-3.2
      * @see https://tools.ietf.org/html/rfc3986#section-3.3
-     * @see Parser::__invoke
      *
      * @param string $uri
      *
@@ -470,7 +469,6 @@ class Parser
      * the URI components.
      *
      * @see https://tools.ietf.org/html/rfc3986#section-3.3
-     * @see Parser::__invoke
      *
      * @param string $uri
      *
@@ -519,7 +517,6 @@ class Parser
      * @see https://tools.ietf.org/html/rfc3986#section-3.1
      * @see Parser::parsePathQueryAndFragment
      * @see Parser::parseSchemeSpecificPart
-     * @see Parser::__invoke
      *
      * @param string $uri
      *
