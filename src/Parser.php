@@ -94,6 +94,20 @@ class Parser
     /**
      * Parse an URI string into its components.
      *
+     * @see Parser::parse
+     *
+     * @param string $uri
+     *
+     * @return array
+     */
+    public function __invoke(string $uri): array
+    {
+        return $this->parse($uri);
+    }
+
+    /**
+     * Parse an URI string into its components.
+     *
      * This method parses a URL and returns an associative array containing any
      * of the various components of the URL that are present.
      *
@@ -134,7 +148,7 @@ class Parser
      *
      * @return array
      */
-    public function __invoke(string $uri): array
+    public function parse(string $uri): array
     {
         //simple URI which do not need any parsing
         static $simple_uri = [
@@ -365,7 +379,7 @@ class Parser
      * Convert a registered name label to its IDNA ASCII form.
      *
      * Conversion is done only if the label contains none valid label characters
-     * if a '%' sud delimiter is detected the label MUST be rawurldecode prior to
+     * if a '%' sub delimiter is detected the label MUST be rawurldecode prior to
      * making the conversion
      *
      * @param string $label

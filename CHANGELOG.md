@@ -2,6 +2,24 @@
 
 All Notable changes to `league-uri-parser` will be documented in this file
 
+## Next - TBD
+
+### Added
+
+- Much requested `Parser::parse` method
+
+### Fixed
+
+- Fix Host parsing according to RFC3986 rules see [#107](https://github.com/thephpleague/uri/issues/107)
+
+### Deprecated
+
+- None
+
+### Removed
+
+- None
+
 ## 1.2.0 - 2017-10-20
 
 ### Added
