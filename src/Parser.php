@@ -374,7 +374,7 @@ class Parser
      */
     protected function toAscii(string $label)
     {
-        if (strpos($label, '%') != false) {
+        if (false !== strpos($label, '%')) {
             $label = rawurldecode($label);
         }
 
