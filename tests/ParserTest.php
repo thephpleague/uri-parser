@@ -708,11 +708,12 @@ class ParserTest extends TestCase
             'empty host' => ['', true],
             'invalid host: label too long' => [implode('', array_fill(0, 64, 'a')).'.com', false],
             'invalid host: host too long' => ["$long_label.$long_label.$long_label. $long_label.$long_label", false],
-            'invalid host: invalid label according to RFC3986' => ['www.fußball.com-', false],
+            'invalid host: invalid label according to RFC3986' => ['www.fußball.com-', true],
             'invalid host: host contains space' => ['re view.com', false],
             'non idn like host #issue 5 (1)' => ['r5---sn-h0jeen7y.domain.com', true],
             'non idn like host #issue 5 (2)' => ['tw--services.co.uk', true],
             'non idn like host #issue 5 (3)' => ['om--tat-sat.co.uk', true],
+            'host with urlencoded data' => ['b%C3%A9b%C3%A9.be', true],
         ];
     }
 
