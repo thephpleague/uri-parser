@@ -26,22 +26,12 @@ namespace League\Uri;
  */
 class Parser
 {
-    const INVALID_URI_CHARS = "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1A\x1B\x1C\x1D\x1E\x1F\x7F";
-
-    const SCHEME_VALID_STARTING_CHARS = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-
-    const SCHEME_VALID_CHARS = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+.-';
-
-    const LABEL_VALID_STARTING_CHARS = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-
     const LOCAL_LINK_PREFIX = '1111111010';
 
     const URI_COMPONENTS = [
         'scheme' => null, 'user' => null, 'pass' => null, 'host' => null,
         'port' => null, 'path' => '', 'query' => null, 'fragment' => null,
     ];
-
-    const SUB_DELIMITERS = '!$&\'()*+,;=';
 
     /**
      * Returns whether a Scheme is valid.
@@ -54,9 +44,9 @@ class Parser
      */
     public function isScheme(string $scheme): bool
     {
-        return '' === $scheme
-            || (strlen($scheme) === strspn($scheme, self::SCHEME_VALID_CHARS)
-                && false !== strpos(self::SCHEME_VALID_STARTING_CHARS, $scheme[0]));
+        static $pattern = '/^[a-z][a-z\+\.\-]*$/i';
+
+        return '' === $scheme || preg_match($pattern, $scheme);
     }
 
     /**
@@ -71,9 +61,9 @@ class Parser
     public function isHost(string $host): bool
     {
         return '' === $host
-            || filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)
-            || $this->isIpv6Host($host)
-            || $this->isRegisteredName($host);
+            || $this->isRegisteredName($host)
+            || $this->isIpv6Host($host);
+
     }
 
     /**
@@ -87,8 +77,11 @@ class Parser
      */
     public function isPort($port): bool
     {
-        return in_array($port, [null, ''], true)
-            || filter_var($port, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 65535]]);
+        if (null === $port || '' === $port) {
+            return true;
+        }
+
+        return (bool) filter_var($port, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 65535]]);
     }
 
     /**
@@ -150,6 +143,8 @@ class Parser
      */
     public function parse(string $uri): array
     {
+        static $pattern = '/[\x00-\x1f\x7f]/';
+
         //simple URI which do not need any parsing
         static $simple_uri = [
             '' => [],
@@ -164,7 +159,7 @@ class Parser
             return array_merge(self::URI_COMPONENTS, $simple_uri[$uri]);
         }
 
-        if (strlen($uri) !== strcspn($uri, self::INVALID_URI_CHARS)) {
+        if (preg_match($pattern, $uri)) {
             throw Exception::createFromInvalidCharacters($uri);
         }
 
@@ -172,7 +167,7 @@ class Parser
         $first_char = $uri[0];
 
         //The URI is made of the fragment only
-        if ('#' == $first_char) {
+        if ('#' === $first_char) {
             $components = self::URI_COMPONENTS;
             $components['fragment'] = (string) substr($uri, 1);
 
@@ -180,7 +175,7 @@ class Parser
         }
 
         //The URI is made of the query and fragment
-        if ('?' == $first_char) {
+        if ('?' === $first_char) {
             $components = self::URI_COMPONENTS;
             list($components['query'], $components['fragment']) = explode('#', substr($uri, 1), 2) + [null, null];
 
@@ -193,7 +188,7 @@ class Parser
         }
 
         //The URI is made of a path, query and fragment
-        if ('/' == $first_char || false === strpos($uri, ':')) {
+        if ('/' === $first_char || false === strpos($uri, ':')) {
             return $this->parsePathQueryAndFragment($uri);
         }
 
@@ -277,7 +272,7 @@ class Parser
         }
 
         $delimiter_offset = strpos($hostname, ']') + 1;
-        if (isset($hostname[$delimiter_offset]) && ':' != $hostname[$delimiter_offset]) {
+        if (isset($hostname[$delimiter_offset]) && ':' !== $hostname[$delimiter_offset]) {
             throw Exception::createFromInvalidHostname($hostname);
         }
 
@@ -317,7 +312,7 @@ class Parser
      */
     protected function isIpv6Host(string $ipv6): bool
     {
-        if ('][' !== substr($ipv6.$ipv6, strlen($ipv6) - 1, 2)) {
+        if ('[' !== ($ipv6[0] ?? '') || ']' !== substr($ipv6, -1)) {
             return false;
         }
 
@@ -363,15 +358,26 @@ class Parser
      */
     protected function isRegisteredName(string $host): bool
     {
+        static $pattern = '/^(?:[a-z0-9\-_]{1,63}\.){0,126}[a-z0-9\-_]{1,63}$/i';
+
         if ('.' === substr($host, -1, 1)) {
             $host = substr($host, 0, -1);
         }
 
-        $labels = array_map([$this, 'toAscii'], explode('.', $host));
+        if (preg_match($pattern, $host)) {
+            return true;
+        }
 
-        return 127 > count($labels)
-            && 253 > strlen(implode('.', $labels))
-            && $labels === array_filter($labels, [$this, 'isHostLabel']);
+        $labels = explode('.', $host);
+        $count = count($labels);
+
+        if (127 < $count) {
+            return false;
+        }
+
+        $labels = array_filter(array_map([$this, 'toAscii'], $labels));
+
+        return count($labels) === $count;
     }
 
     /**
@@ -387,15 +393,23 @@ class Parser
      */
     protected function toAscii(string $label)
     {
+        static $pattern = '/^[a-z0-9\-_]{1,63}$/i';
+
         if (false !== strpos($label, '%')) {
             $label = rawurldecode($label);
         }
 
-        if (strlen($label) === strspn($label, self::LABEL_VALID_STARTING_CHARS.'-')) {
+        if (preg_match($pattern, $label)) {
             return $label;
         }
 
-        return idn_to_ascii($label, IDNA_NONTRANSITIONAL_TO_ASCII, INTL_IDNA_VARIANT_UTS46);
+        $label = idn_to_ascii($label, IDNA_NONTRANSITIONAL_TO_ASCII, INTL_IDNA_VARIANT_UTS46);
+
+        if (false === $label || !$this->isHostLabel($label)) {
+            return false;
+        }
+
+        return $label;
     }
 
     /**
@@ -417,9 +431,11 @@ class Parser
      */
     protected function isHostLabel($label): bool
     {
+        static $pattern = '/^[a-z0-9!$&\-\'\(\)*+,;=_~]+$/i';
+
         return '' != $label
             && 63 >= strlen($label)
-            && strlen($label) == strspn($label, self::LABEL_VALID_STARTING_CHARS.'-_~'.self::SUB_DELIMITERS);
+            && preg_match($pattern, $label);
     }
 
     /**
@@ -435,15 +451,17 @@ class Parser
      */
     protected function filterPort($port)
     {
-        if (in_array($port, [null, false, ''], true)) {
+        if (null === $port || false === $port || '' === $port) {
             return null;
         }
 
-        if (!$this->isPort($port)) {
+        $result = filter_var($port, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 65535]]);
+
+        if (false === $result) {
             throw Exception::createFromInvalidPort($port);
         }
 
-        return filter_var($port, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 65535]]);
+        return $result;
     }
 
 
@@ -527,9 +545,7 @@ class Parser
     protected function fallbackParser(string $uri): array
     {
         //1 - we split the URI on the first detected colon character
-        $parts = explode(':', $uri, 2);
-        $remaining_uri = array_pop($parts);
-        $scheme = array_shift($parts);
+        list($scheme, $remaining_uri) = explode(':', $uri, 2) + [null, null];
 
         //1.1 - a scheme can not be empty (ie a URI can not start with a colon)
         if ('' === $scheme) {
