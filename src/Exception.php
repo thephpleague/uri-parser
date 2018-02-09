@@ -19,7 +19,7 @@ namespace League\Uri;
 use InvalidArgumentException;
 
 /**
- * a Trait to validate a Hostname
+ * An exception thrown on parse attempts of invalid URIs.
  *
  * @see     https://tools.ietf.org/html/rfc3986
  * @package League\Uri
