@@ -95,7 +95,7 @@ function parse(string $uri): array
 
     $parser = $parser ?? new Parser();
 
-    return $parser($uri);
+    return $parser->parse($uri);
 }
 
 /**
