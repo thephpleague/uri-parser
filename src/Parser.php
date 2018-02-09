@@ -61,8 +61,8 @@ class Parser
     public function isHost(string $host): bool
     {
         return '' === $host
-            || $this->isRegisteredName($host)
-            || $this->isIpv6Host($host);
+            || $this->isIpv6Host($host)
+            || $this->isRegisteredName($host);
 
     }
 
@@ -358,29 +358,37 @@ class Parser
      */
     protected function isRegisteredName(string $host): bool
     {
-        static $pattern = '/^(?:[a-z0-9\-_]{1,63}\.){0,126}[a-z0-9\-_]{1,63}$/i';
-
-        if ('.' === substr($host, -1, 1)) {
-            $host = substr($host, 0, -1);
-        }
+        // Note that unreserved is purposely missing . and -
+        // . is used to separate labels
+        // - cannot start or end a label
+        static $pattern = '/(?(DEFINE)
+                (?<unreserved> [a-z0-9\_\~])
+                (?<gen_delims> [:\/?#\[\]@])
+                (?<sub_delims> [!$&\'()*+,;=])
+                (?<label> (?:(?&unreserved)(?:(?&unreserved)|(?&gen_delims)|(?&sub_delims)|\-){0,61})?(?&unreserved))
+            )
+            ^(?:(?&label)\.){0,126}(?&label)\.?$/imx';
 
         if (preg_match($pattern, $host)) {
             return true;
         }
 
-        $labels = explode('.', $host);
-        $count = count($labels);
+        if (false !== strpos($host, '%')) {
+            $host = rawurldecode($host);
+        }
 
-        if (127 < $count) {
+        $host = idn_to_ascii($host, IDNA_NONTRANSITIONAL_TO_ASCII, INTL_IDNA_VARIANT_UTS46);
+
+        if (false === $host) {
             return false;
         }
 
-        $labels = array_filter(array_map([$this, 'toAscii'], $labels));
-
-        return count($labels) === $count;
+        return (bool) preg_match($pattern, $host);
     }
 
     /**
+     * @deprecated Will be removed in v2.0
+     *
      * Convert a registered name label to its IDNA ASCII form.
      *
      * Conversion is done only if the label contains none valid label characters
@@ -393,16 +401,6 @@ class Parser
      */
     protected function toAscii(string $label)
     {
-        static $pattern = '/^[a-z0-9\-_]{1,63}$/i';
-
-        if (false !== strpos($label, '%')) {
-            $label = rawurldecode($label);
-        }
-
-        if (preg_match($pattern, $label)) {
-            return $label;
-        }
-
         $label = idn_to_ascii($label, IDNA_NONTRANSITIONAL_TO_ASCII, INTL_IDNA_VARIANT_UTS46);
 
         if (false === $label || !$this->isHostLabel($label)) {
@@ -413,6 +411,8 @@ class Parser
     }
 
     /**
+     * @deprecated Will be removed in v2.0
+     *
      * Returns whether the registered name label is valid
      *
      * A valid registered name label MUST:
@@ -431,10 +431,15 @@ class Parser
      */
     protected function isHostLabel($label): bool
     {
-        static $pattern = '/^[a-z0-9!$&\-\'\(\)*+,;=_~]+$/i';
+        static $pattern = '(?(DEFINE)
+                (?<unreserved> [a-z0-9\_\~])
+                (?<gen_delims> [:\/?#\[\]@])
+                (?<sub_delims> [!$&\'()*+,;=])
+                (?<label> (?:(?&unreserved)(?:(?&unreserved)|(?&gen_delims)|(?&sub_delims)|\-){0,61})?(?&unreserved))
+            )
+            ^(?&label)$';
 
         return '' != $label
-            && 63 >= strlen($label)
             && preg_match($pattern, $label);
     }
 
