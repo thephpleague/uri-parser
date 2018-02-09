@@ -17,7 +17,7 @@ declare(strict_types=1);
 namespace League\Uri;
 
 /**
- * a class to parse a URI string according to RFC3986
+ * A class to parse a URI string according to RFC3986.
  *
  * @see     https://tools.ietf.org/html/rfc3986
  * @package League\Uri
@@ -44,7 +44,7 @@ class Parser
     const SUB_DELIMITERS = '!$&\'()*+,;=';
 
     /**
-     * Returns whether a Scheme is valid.
+     * Returns whether a scheme is valid.
      *
      * @see https://tools.ietf.org/html/rfc3986#section-3.1
      *
@@ -60,7 +60,7 @@ class Parser
     }
 
     /**
-     * Returns whether a Host is valid.
+     * Returns whether a hostname is valid.
      *
      * @see https://tools.ietf.org/html/rfc3986#section-3.2.2
      *
@@ -92,11 +92,13 @@ class Parser
     }
 
     /**
-     * Parse an URI string into its components.
+     * Parse a URI string into its components.
      *
      * @see Parser::parse
      *
      * @param string $uri
+     *
+     * @throws Exception if the URI contains invalid characters
      *
      * @return array
      */
@@ -108,8 +110,8 @@ class Parser
     /**
      * Parse an URI string into its components.
      *
-     * This method parses a URL and returns an associative array containing any
-     * of the various components of the URL that are present.
+     * This method parses a URI and returns an associative array containing any
+     * of the various components of the URI that are present.
      *
      * <code>
      * $components = (new Parser())->parse('http://foo@test.example.com:42?query#');
@@ -202,27 +204,26 @@ class Parser
     }
 
     /**
-     * Extract Components from an URI without a scheme part.
+     * Extract components from a URI without a scheme part.
      *
      * The URI MUST start with the authority component
      * preceded by its delimiter the double slash ('//')
      *
-     * ex: //user:pass@host:42/path?query#fragment
+     * Example: //user:pass@host:42/path?query#fragment
      *
      * The authority MUST adhere to the RFC3986 requirements.
      *
-     * If the URI contains a path component it MUST be empty or absolute
+     * If the URI contains a path component, it MUST be empty or absolute
      * according to RFC3986 path classification.
      *
-     * This method returns an associative array containing all
-     * the URI components.
+     * This method returns an associative array containing all URI components.
      *
      * @see https://tools.ietf.org/html/rfc3986#section-3.2
      * @see https://tools.ietf.org/html/rfc3986#section-3.3
      *
      * @param string $uri
      *
-     * @throws Exception If the port is invalid
+     * @throws Exception If any component of the URI is invalid
      *
      * @return array
      */
@@ -262,9 +263,11 @@ class Parser
     }
 
     /**
-     * Parse and validate the URI hostname
+     * Parse and validate the URI hostname.
      *
      * @param string $hostname
+     *
+     * @throws Exception If the hostname is invalid
      *
      * @return array
      */
@@ -292,7 +295,7 @@ class Parser
      *
      * @param string|null $host
      *
-     * @throws Exception If the host component is invalid
+     * @throws Exception If the hostname is invalid
      *
      * @return string|null
      */
@@ -306,7 +309,7 @@ class Parser
     }
 
     /**
-     * validate an Ipv6 Hostname
+     * Validate an IPv6 host.
      *
      * @see http://tools.ietf.org/html/rfc6874#section-2
      * @see http://tools.ietf.org/html/rfc6874#section-4
@@ -346,7 +349,7 @@ class Parser
     }
 
     /**
-     * Returns whether the hostname is valid
+     * Returns whether the hostname is valid.
      *
      * A valid registered name MUST:
      *
@@ -399,7 +402,7 @@ class Parser
     }
 
     /**
-     * Returns whether the registered name label is valid
+     * Returns whether the registered name label is valid.
      *
      * A valid registered name label MUST:
      *
@@ -451,7 +454,7 @@ class Parser
      * Extract Components from an URI without scheme or authority part.
      *
      * The URI contains a path component and MUST adhere to path requirements
-     * from RFC3986. The path can be
+     * of RFC3986. The path can be
      *
      * <code>
      * path   = path-abempty    ; begins with "/" or is empty
@@ -465,8 +468,7 @@ class Parser
      * ex: /path
      * ex: /pa:th#f
      *
-     * This method returns an associative array containing all
-     * the URI components.
+     * This method returns an associative array containing all URI components.
      *
      * @see https://tools.ietf.org/html/rfc3986#section-3.3
      *
