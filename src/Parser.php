@@ -177,7 +177,7 @@ class Parser
         //The URI is made of the query and fragment
         if ('?' === $first_char) {
             $components = self::URI_COMPONENTS;
-            list($components['query'], $components['fragment']) = explode('#', substr($uri, 1), 2) + [null, null];
+            list($components['query'], $components['fragment']) = explode('#', substr($uri, 1), 2) + [1 => null];
 
             return $components;
         }
@@ -229,10 +229,10 @@ class Parser
 
         //Parsing is done from the right upmost part to the left
         //1 - detect fragment, query and path part if any
-        list($remaining_uri, $components['fragment']) = explode('#', $remaining_uri, 2) + [null, null];
-        list($remaining_uri, $components['query']) = explode('?', $remaining_uri, 2) + [null, null];
+        list($remaining_uri, $components['fragment']) = explode('#', $remaining_uri, 2) + [1 => null];
+        list($remaining_uri, $components['query']) = explode('?', $remaining_uri, 2) + [1 => null];
         if (false !== ($pos = strpos($remaining_uri, '/'))) {
-            list($remaining_uri, $components['path']) = explode('/', $remaining_uri, 2) + [null, null];
+            list($remaining_uri, $components['path']) = explode('/', $remaining_uri, 2) + [1 => null];
             $components['path'] = '/'.$components['path'];
         }
 
@@ -246,10 +246,10 @@ class Parser
 
         //otherwise we split the authority into the user information and the hostname parts
         $parts = explode('@', $remaining_uri, 2);
-        $hostname = array_pop($parts);
-        $user_info = array_pop($parts);
+        $hostname = $parts[1] ?? $parts[0];
+        $user_info = isset($parts[1]) ? $parts[0] : null;
         if (null !== $user_info) {
-            list($components['user'], $components['pass']) = explode(':', $user_info, 2) + [null, null];
+            list($components['user'], $components['pass']) = explode(':', $user_info, 2) + [1 => null];
         }
         list($components['host'], $components['port']) = $this->parseHostname($hostname);
 
@@ -266,7 +266,7 @@ class Parser
     protected function parseHostname(string $hostname): array
     {
         if (false === strpos($hostname, '[')) {
-            list($host, $port) = explode(':', $hostname, 2) + [null, null];
+            list($host, $port) = explode(':', $hostname, 2) + [1 => null];
 
             return [$this->filterHost($host), $this->filterPort($port)];
         }
@@ -510,10 +510,10 @@ class Parser
 
         //Parsing is done from the right upmost part to the left
         //1 - detect the fragment part if any
-        list($remaining_uri, $components['fragment']) = explode('#', $uri, 2) + [null, null];
+        list($remaining_uri, $components['fragment']) = explode('#', $uri, 2) + [1 => null];
 
         //2 - detect the query and the path part
-        list($components['path'], $components['query']) = explode('?', $remaining_uri, 2) + [null, null];
+        list($components['path'], $components['query']) = explode('?', $remaining_uri, 2) + [1 => null];
 
         return $components;
     }
@@ -550,7 +550,7 @@ class Parser
     protected function fallbackParser(string $uri): array
     {
         //1 - we split the URI on the first detected colon character
-        list($scheme, $remaining_uri) = explode(':', $uri, 2) + [null, null];
+        list($scheme, $remaining_uri) = explode(':', $uri, 2) + [1 => null];
 
         //1.1 - a scheme can not be empty (ie a URI can not start with a colon)
         if ('' === $scheme) {
@@ -591,10 +591,10 @@ class Parser
 
         //2.5 - Parsing is done from the right upmost part to the left from the scheme specific part
         //2.5.1 - detect the fragment part if any
-        list($remaining_uri, $components['fragment']) = explode('#', $remaining_uri, 2) + [null, null];
+        list($remaining_uri, $components['fragment']) = explode('#', $remaining_uri, 2) + [1 => null];
 
         //2.5.2 - detect the part and query part if any
-        list($components['path'], $components['query']) = explode('?', $remaining_uri, 2) + [null, null];
+        list($components['path'], $components['query']) = explode('?', $remaining_uri, 2) + [1 => null];
 
         return $components;
     }
