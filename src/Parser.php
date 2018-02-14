@@ -77,11 +77,13 @@ class Parser
      */
     public function isPort($port): bool
     {
+        static $pattern = '/^[0-9]+$/';
+
         if (null === $port || '' === $port) {
             return true;
         }
 
-        return (bool) filter_var($port, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 65535]]);
+        return (bool) preg_match($pattern, (string) $port);
     }
 
     /**
@@ -358,32 +360,26 @@ class Parser
      */
     protected function isRegisteredName(string $host): bool
     {
-        // Note that unreserved is purposely missing . and -
-        // . is used to separate labels
-        // - cannot start or end a label
-        static $pattern = '/(?(DEFINE)
-                (?<unreserved> [a-z0-9\_\~])
-                (?<gen_delims> [:\/?#\[\]@])
+        // Note that unreserved is purposely missing . as it is used to separate labels.
+        static $reg_name = '/(?(DEFINE)
+                (?<unreserved> [a-z0-9_~\-])
                 (?<sub_delims> [!$&\'()*+,;=])
-                (?<label> (?:(?&unreserved)(?:(?&unreserved)|(?&gen_delims)|(?&sub_delims)|\-){0,61})?(?&unreserved))
+                (?<encoded> %[A-F0-9]{2})
+                (?<reg_name> (?:(?&unreserved)|(?&sub_delims)|(?&encoded)){1,63})
             )
-            ^(?:(?&label)\.){0,126}(?&label)\.?$/imx';
+            ^(?:(?&reg_name)\.){0,126}(?&reg_name)\.?$/imx';
 
-        if (preg_match($pattern, $host)) {
+        static $gen_delims = '/[:\/?#\[\]@ ]/'; // Also includes space.
+
+        if (preg_match($reg_name, $host)) {
             return true;
         }
 
-        if (false !== strpos($host, '%')) {
-            $host = rawurldecode($host);
-        }
-
-        $host = idn_to_ascii($host, IDNA_NONTRANSITIONAL_TO_ASCII, INTL_IDNA_VARIANT_UTS46);
-
-        if (false === $host) {
+        if (preg_match($gen_delims, $host)) {
             return false;
         }
 
-        return (bool) preg_match($pattern, $host);
+        return (bool) idn_to_ascii($host, IDNA_NONTRANSITIONAL_TO_ASCII, INTL_IDNA_VARIANT_UTS46);
     }
 
     /**
@@ -401,13 +397,12 @@ class Parser
      */
     protected function toAscii(string $label)
     {
-        $label = idn_to_ascii($label, IDNA_NONTRANSITIONAL_TO_ASCII, INTL_IDNA_VARIANT_UTS46);
+        trigger_error(
+            self::class . '::' . __METHOD__ . ' is deprecated and will be removed in a future version',
+            E_USER_DEPRECATED
+        );
 
-        if (false === $label || !$this->isHostLabel($label)) {
-            return false;
-        }
-
-        return $label;
+        return idn_to_ascii($label, IDNA_NONTRANSITIONAL_TO_ASCII, INTL_IDNA_VARIANT_UTS46);
     }
 
     /**
@@ -431,16 +426,22 @@ class Parser
      */
     protected function isHostLabel($label): bool
     {
-        static $pattern = '(?(DEFINE)
-                (?<unreserved> [a-z0-9\_\~])
-                (?<gen_delims> [:\/?#\[\]@])
+        // Note that unreserved is purposely missing . as it is used to separate labels.
+        static $reg_name = '/(?(DEFINE)
+                (?<unreserved> [a-z0-9_~\-])
                 (?<sub_delims> [!$&\'()*+,;=])
-                (?<label> (?:(?&unreserved)(?:(?&unreserved)|(?&gen_delims)|(?&sub_delims)|\-){0,61})?(?&unreserved))
+                (?<encoded> %[A-F0-9]{2})
+                (?<reg_name> (?:(?&unreserved)|(?&sub_delims)|(?&encoded)){1,63})
             )
-            ^(?&label)$';
+            ^(?&reg_name)$/imx';
+
+        trigger_error(
+            self::class . '::' . __METHOD__ . ' is deprecated and will be removed in a future version',
+            E_USER_DEPRECATED
+        );
 
         return '' != $label
-            && preg_match($pattern, $label);
+            && preg_match($reg_name, $label);
     }
 
     /**
@@ -456,17 +457,17 @@ class Parser
      */
     protected function filterPort($port)
     {
+        static $pattern = '/^[0-9]+$/';
+
         if (null === $port || false === $port || '' === $port) {
             return null;
         }
 
-        $result = filter_var($port, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 65535]]);
-
-        if (false === $result) {
+        if (!preg_match($pattern, (string) $port)) {
             throw Exception::createFromInvalidPort($port);
         }
 
-        return $result;
+        return (int) $port;
     }
 
 
@@ -550,7 +551,9 @@ class Parser
     protected function fallbackParser(string $uri): array
     {
         //1 - we split the URI on the first detected colon character
-        list($scheme, $remaining_uri) = explode(':', $uri, 2) + [1 => null];
+        $parts = explode(':', $uri, 2);
+        $remaining_uri = $parts[1] ?? $parts[0];
+        $scheme = isset($parts[1]) ? $parts[0] : null;
 
         //1.1 - a scheme can not be empty (ie a URI can not start with a colon)
         if ('' === $scheme) {

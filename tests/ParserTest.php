@@ -650,7 +650,7 @@ class ParserTest extends TestCase
             'invalid scheme (1)' => ['0scheme://host/path?query#fragment'],
             'invalid scheme (2)' => ['://host:80/p?q#f'],
             'invalid port (1)' => ['//host:port/path?query#fragment'],
-            'invalid port (2)' => ['//host:892358/path?query#fragment'],
+            'invalid port (2)' => ['//host:-892358/path?query#fragment'],
             'invalid ipv6 host (1)' => ['scheme://[127.0.0.1]/path?query#fragment'],
             'invalid ipv6 host (2)' => ['scheme://]::1[/path?query#fragment'],
             'invalid ipv6 host (3)' => ['scheme://[::1|/path?query#fragment'],
@@ -687,7 +687,6 @@ class ParserTest extends TestCase
             'RFC3986 registered name (2)' => ['www._fußball.com', true],
             'Sub-domain beginning with underscore' => ['_tcp.example.com', true],
             'Host with urlencoded label' => ['b%C3%A9b%C3%A9.be', true],
-            'Host with delims' => ['tes:/?#+&[]@t.com', true],
             'IDN host with delims' => ['www.fuß*+,;ball.com', true],
             'IPv4 host' => ['127.0.0.1', true],
             'IPv4 like host' => ['9.2.3', true],
@@ -702,8 +701,8 @@ class ParserTest extends TestCase
             'invalid IPv6 host (8)' => ['[::1%25%23]', false],
             'empty host' => ['', true],
             'host with dashes' => ['t-e-s-t.com', true],
-            'host starting with dash' => ['-test.com', false],
-            'host ending with dash' => ['test-.com', false],
+            'host starting with dash' => ['-test.com', true],
+            'host ending with dash' => ['test-.com', true],
             'invalid host: label too long' => [implode('', array_fill(0, 64, 'a')).'.com', false],
             'invalid host: host too long' => ["$long_label.$long_label.$long_label. $long_label.$long_label", false],
             'invalid host: host contains space' => ['re view.com', false],
@@ -729,8 +728,8 @@ class ParserTest extends TestCase
             'int' => [3, true],
             'string' => ['3', true],
             'null' => [null, true],
-            'invalid min range' => [0, false],
-            'invalid max range' => [65536, false],
+            'negative port number' => [-1, false],
+            'non-number' => ['x', false],
         ];
     }
 
