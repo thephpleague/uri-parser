@@ -402,6 +402,10 @@ class Parser
             E_USER_DEPRECATED
         );
 
+        if (false !== strpos($label, '%')) {
+            $label = rawurldecode($label);
+        }
+
         return idn_to_ascii($label, IDNA_NONTRANSITIONAL_TO_ASCII, INTL_IDNA_VARIANT_UTS46);
     }
 
