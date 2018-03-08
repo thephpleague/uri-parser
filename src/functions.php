@@ -36,7 +36,7 @@ function is_host(string $host): bool
 }
 
 /**
- * Returns whether the URI scheme component is valid according to RFC3986.
+ * Returns whether the URI port component is valid according to RFC3986.
  *
  * @see https://tools.ietf.org/html/rfc3986#section-3.2.3
  * @see Parser::isPort()
@@ -81,7 +81,7 @@ function is_scheme(string $scheme): bool
  *
  * @see https://tools.ietf.org/html/rfc3986
  * @see https://tools.ietf.org/html/rfc3986#section-2
- * @see Parser::__invoke()
+ * @see Parser::parse()
  *
  * @param string $uri
  *
@@ -95,17 +95,17 @@ function parse(string $uri): array
 
     $parser = $parser ?? new Parser();
 
-    return $parser($uri);
+    return $parser->parse($uri);
 }
 
 /**
- * Generate the URI string representation from its hash representation
- * returned by Parser::__invoke() or PHP's parse_url
+ * Generate an URI string representation from its parsed representation
+ * returned by Parser::parse() or PHP's parse_url.
  *
- * If you supply your own hash you are responsible for providing
+ * If you supply your own array, you are responsible for providing
  * valid components without their URI delimiters.
  *
- * For security reason the pass component has been deprecated
+ * For security reasons the password (pass) component has been deprecated
  * as per RFC3986 and is never returned in the URI string
  *
  * @see https://tools.ietf.org/html/rfc3986#section-5.3
@@ -143,5 +143,5 @@ function build(array $components): string
         return $components['scheme'].':'.$uri;
     }
 
-    return  $uri;
+    return $uri;
 }
