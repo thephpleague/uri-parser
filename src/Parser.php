@@ -362,12 +362,12 @@ class Parser
     {
         // Note that unreserved is purposely missing . as it is used to separate labels.
         static $reg_name = '/(?(DEFINE)
-                (?<unreserved> [a-z0-9_~\-])
-                (?<sub_delims> [!$&\'()*+,;=])
-                (?<encoded> %[A-F0-9]{2})
-                (?<reg_name> (?:(?&unreserved)|(?&sub_delims)|(?&encoded)){1,63})
+                (?<unreserved>[a-z0-9_~\-])
+                (?<sub_delims>[!$&\'()*+,;=])
+                (?<encoded>%[A-F0-9]{2})
+                (?<reg_name>(?:(?&unreserved)|(?&sub_delims)|(?&encoded))*)
             )
-            ^(?:(?&reg_name)\.){0,126}(?&reg_name)\.?$/imx';
+            ^(?:(?&reg_name)\.)*(?&reg_name)\.?$/imx';
 
         static $gen_delims = '/[:\/?#\[\]@ ]/'; // Also includes space.
 
@@ -412,13 +412,9 @@ class Parser
     /**
      * @deprecated Will be removed in v2.0
      *
-     * Returns whether the registered name label is valid
+     * Returns whether the registered name label is valid.
      *
-     * A valid registered name label MUST:
-     *
-     * - not be empty
-     * - contain 63 characters or less
-     * - conform to the following ABNF
+     * A valid registered name label MUST conform to the following ABNF
      *
      * reg-name = *( unreserved / pct-encoded / sub-delims )
      *
@@ -432,10 +428,10 @@ class Parser
     {
         // Note that unreserved is purposely missing . as it is used to separate labels.
         static $reg_name = '/(?(DEFINE)
-                (?<unreserved> [a-z0-9_~\-])
-                (?<sub_delims> [!$&\'()*+,;=])
-                (?<encoded> %[A-F0-9]{2})
-                (?<reg_name> (?:(?&unreserved)|(?&sub_delims)|(?&encoded)){1,63})
+                (?<unreserved>[a-z0-9_~\-])
+                (?<sub_delims[!$&\'()*+,;=])
+                (?<encoded>%[A-F0-9]{2})
+                (?<reg_name>(?:(?&unreserved)|(?&sub_delims)|(?&encoded))*)
             )
             ^(?&reg_name)$/imx';
 
