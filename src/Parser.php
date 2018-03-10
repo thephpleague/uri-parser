@@ -79,7 +79,6 @@ class Parser
         return '' === $host
             || $this->isIpv6Host($host)
             || $this->isRegisteredName($host);
-
     }
 
     /**
@@ -443,22 +442,14 @@ class Parser
      */
     protected function isHostLabel($label): bool
     {
-        // Note that unreserved is purposely missing . as it is used to separate labels.
-        static $reg_name = '/(?(DEFINE)
-                (?<unreserved>[a-z0-9_~\-])
-                (?<sub_delims[!$&\'()*+,;=])
-                (?<encoded>%[A-F0-9]{2})
-                (?<reg_name>(?:(?&unreserved)|(?&sub_delims)|(?&encoded))*)
-            )
-            ^(?&reg_name)$/imx';
-
         trigger_error(
             self::class . '::' . __METHOD__ . ' is deprecated and will be removed in a future version',
             E_USER_DEPRECATED
         );
 
         return '' != $label
-            && preg_match($reg_name, $label);
+            && 63 >= strlen($label)
+            && strlen($label) == strspn($label, self::LABEL_VALID_STARTING_CHARS.'-_~'.self::SUB_DELIMITERS);
     }
 
     /**
