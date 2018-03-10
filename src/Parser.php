@@ -38,6 +38,7 @@ class Parser
     /** @deprecated Will be removed in v2.0 */
     const LABEL_VALID_STARTING_CHARS = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
+    /** @deprecated Will be removed in v2.0 */
     const LOCAL_LINK_PREFIX = '1111111010';
 
     const URI_COMPONENTS = [
@@ -351,13 +352,11 @@ class Parser
             return false;
         }
 
-        $reducer = function (string $carry, string $char): string {
-            return $carry.str_pad(decbin(ord($char)), 8, '0', STR_PAD_LEFT);
-        };
+        //Only the address block fe80::/10 can have a Zone ID attach to
+        //let's detect the link local significant 10 bits
+        static $address_block = "\xfe\x80";
 
-        $res = array_reduce(str_split(unpack('A16', inet_pton($ipv6))[1]), $reducer, '');
-
-        return substr($res, 0, 10) === self::LOCAL_LINK_PREFIX;
+        return substr(inet_pton($ipv6) & $address_block, 0, 2) === $address_block;
     }
 
     /**
