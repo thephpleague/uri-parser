@@ -6,7 +6,8 @@ All Notable changes to `league-uri-parser` will be documented in this file
 
 ### Added
 
-- Nothing
+- `MissingIdnSupport` exception which is thrown when trying to parse a possible RFC3987 compliant host
+when the `ext/intl` extension is missing or the ICU minimum version is not supported.
 
 ### Fixed
 

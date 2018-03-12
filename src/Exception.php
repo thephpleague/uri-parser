@@ -3,10 +3,10 @@
  * League.Uri (http://uri.thephpleague.com)
  *
  * @package    League\Uri
- * @subpackage League\Uri
+ * @subpackage League\Uri\Parser
  * @author     Ignace Nyamagana Butera <nyamsprod@gmail.com>
  * @license    https://github.com/thephpleague/uri-parser/blob/master/LICENSE (MIT License)
- * @version    1.3.0
+ * @version    1.4.0
  * @link       https://github.com/thephpleague/uri-parser/
  *
  * For the full copyright and license information, please view the LICENSE

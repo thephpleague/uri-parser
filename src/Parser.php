@@ -3,10 +3,10 @@
  * League.Uri (http://uri.thephpleague.com)
  *
  * @package    League\Uri
- * @subpackage League\Uri
+ * @subpackage League\Uri\Parser
  * @author     Ignace Nyamagana Butera <nyamsprod@gmail.com>
  * @license    https://github.com/thephpleague/uri-parser/blob/master/LICENSE (MIT License)
- * @version    1.3.0
+ * @version    1.4.0
  * @link       https://github.com/thephpleague/uri-parser/
  *
  * For the full copyright and license information, please view the LICENSE
@@ -408,7 +408,7 @@ class Parser
         // @codeCoverageIgnoreStart
         // added because it is not possible in travis to disabled the ext/intl extension
         // see travis issue https://github.com/travis-ci/travis-ci/issues/4701
-        throw new Exception(sprintf('the host `%s` could not be processed for IDN. Verify that ext/intl is installed for IDN support and that ICU is at least version 4.6.', $host));
+        throw new MissingIdnSupport(sprintf('the host `%s` could not be processed for IDN. Verify that ext/intl is installed for IDN support and that ICU is at least version 4.6.', $host));
         // @codeCoverageIgnoreEnd
     }
 
@@ -445,7 +445,7 @@ class Parser
             return idn_to_ascii($label, IDNA_NONTRANSITIONAL_TO_ASCII, INTL_IDNA_VARIANT_UTS46);
         }
 
-        throw new Exception(sprintf('the label `%s` could not be processed for IDN. Verify that ext/intl is installed for IDN support and that ICU is at least version 4.6.', $label));
+        throw new MissingIdnSupport(sprintf('the label `%s` could not be processed for IDN. Verify that ext/intl is installed for IDN support and that ICU is at least version 4.6.', $label));
     }
 
     /**
