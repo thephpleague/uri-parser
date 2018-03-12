@@ -26,19 +26,19 @@ namespace League\Uri;
  */
 class Parser
 {
-    /** @deprecated Will be removed in v2.0 */
+    /** @deprecated 1.4.0 will be removed in the next major point release */
     const INVALID_URI_CHARS = "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1A\x1B\x1C\x1D\x1E\x1F\x7F";
 
-    /** @deprecated Will be removed in v2.0 */
+    /** @deprecated 1.4.0 will be removed in the next major point release */
     const SCHEME_VALID_STARTING_CHARS = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
-    /** @deprecated Will be removed in v2.0 */
+    /** @deprecated 1.4.0 will be removed in the next major point release */
     const SCHEME_VALID_CHARS = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+.-';
 
-    /** @deprecated Will be removed in v2.0 */
+    /** @deprecated 1.4.0 will be removed in the next major point release */
     const LABEL_VALID_STARTING_CHARS = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
-    /** @deprecated Will be removed in v2.0 */
+    /** @deprecated 1.4.0 will be removed in the next major point release */
     const LOCAL_LINK_PREFIX = '1111111010';
 
     const URI_COMPONENTS = [
@@ -46,7 +46,7 @@ class Parser
         'port' => null, 'path' => '', 'query' => null, 'fragment' => null,
     ];
 
-    /** @deprecated Will be removed in v2.0 */
+    /** @deprecated 1.4.0 will be removed in the next major point release */
     const SUB_DELIMITERS = '!$&\'()*+,;=';
 
     /**
@@ -395,13 +395,18 @@ class Parser
             return false;
         }
 
-        return (bool) idn_to_ascii($host, IDNA_NONTRANSITIONAL_TO_ASCII, INTL_IDNA_VARIANT_UTS46);
+        idn_to_ascii($host, IDNA_NONTRANSITIONAL_TO_ASCII, INTL_IDNA_VARIANT_UTS46, $arr);
+
+        return 0 === $arr['errors'];
     }
 
     /**
-     * @deprecated Will be removed in v2.0
-     *
      * Convert a registered name label to its IDNA ASCII form.
+     *
+     * DEPRECATION WARNING! This method will be removed in the next major point release
+     *
+     * @deprecated 1.4.0 this method is no longer used to validate RFC3987 compliant host component
+     * @codeCoverageIgnore
      *
      * Conversion is done only if the label contains none valid label characters
      * if a '%' sub delimiter is detected the label MUST be rawurldecode prior to
@@ -414,7 +419,7 @@ class Parser
     protected function toAscii(string $label)
     {
         trigger_error(
-            self::class . '::' . __METHOD__ . ' is deprecated and will be removed in a future version',
+            self::class.'::'.__METHOD__.' is deprecated and will be removed in the next major point release',
             E_USER_DEPRECATED
         );
 
@@ -426,9 +431,12 @@ class Parser
     }
 
     /**
-     * @deprecated Will be removed in v2.0
-     *
      * Returns whether the registered name label is valid.
+     *
+     * DEPRECATION WARNING! This method will be removed in the next major point release
+     *
+     * @deprecated 1.4.0 this method is no longer used to validated the host component
+     * @codeCoverageIgnore
      *
      * A valid registered name label MUST conform to the following ABNF
      *
@@ -443,7 +451,7 @@ class Parser
     protected function isHostLabel($label): bool
     {
         trigger_error(
-            self::class . '::' . __METHOD__ . ' is deprecated and will be removed in a future version',
+            self::class.'::'.__METHOD__.' is deprecated and will be removed in the next major point release',
             E_USER_DEPRECATED
         );
 

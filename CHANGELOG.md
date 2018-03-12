@@ -2,6 +2,33 @@
 
 All Notable changes to `league-uri-parser` will be documented in this file
 
+## Next - TBD
+
+### Added
+
+- Nothing
+
+### Fixed
+
+- Improve Host parsing according to RFC3986
+- Improve Parsing performance
+- using PHPstan
+
+### Deprecated
+
+- `Parser::INVALID_URI_CHARS` internal constants
+- `Parser::CHEME_VALID_STARTING_CHARS` internal constants
+- `Parser::SCHEME_VALID_CHARS` internal constants
+- `Parser::LABEL_VALID_STARTING_CHARS` internal constants
+- `Parser::LOCAL_LINK_PREFIX` internal constants
+- `Parser::UB_DELIMITERS` internal constants
+- `Parser::isHostLabel` internal method no longer used
+- `Parser::toAscii` internal method no longer used
+
+### Removed
+
+- None
+
 ## 1.3.0 - 2017-12-01
 
 ### Added

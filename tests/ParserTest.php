@@ -756,7 +756,9 @@ class ParserTest extends TestCase
      */
     public function testBuild($uri, $expected)
     {
-        $this->assertSame($expected, Uri\build(Uri\parse($uri)));
+        $uri = (new Uri\Parser())($uri);
+
+        $this->assertSame($expected, Uri\build($uri));
     }
 
     public function buildUriProvider()
