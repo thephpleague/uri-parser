@@ -26,14 +26,19 @@ namespace League\Uri;
  */
 class Parser
 {
+    /** @deprecated Will be removed in v2.0 */
     const INVALID_URI_CHARS = "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1A\x1B\x1C\x1D\x1E\x1F\x7F";
 
+    /** @deprecated Will be removed in v2.0 */
     const SCHEME_VALID_STARTING_CHARS = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
+    /** @deprecated Will be removed in v2.0 */
     const SCHEME_VALID_CHARS = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+.-';
 
+    /** @deprecated Will be removed in v2.0 */
     const LABEL_VALID_STARTING_CHARS = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
+    /** @deprecated Will be removed in v2.0 */
     const LOCAL_LINK_PREFIX = '1111111010';
 
     const URI_COMPONENTS = [
@@ -41,6 +46,7 @@ class Parser
         'port' => null, 'path' => '', 'query' => null, 'fragment' => null,
     ];
 
+    /** @deprecated Will be removed in v2.0 */
     const SUB_DELIMITERS = '!$&\'()*+,;=';
 
     /**
@@ -54,9 +60,9 @@ class Parser
      */
     public function isScheme(string $scheme): bool
     {
-        return '' === $scheme
-            || (strlen($scheme) === strspn($scheme, self::SCHEME_VALID_CHARS)
-                && false !== strpos(self::SCHEME_VALID_STARTING_CHARS, $scheme[0]));
+        static $pattern = '/^[a-z][a-z\+\.\-]*$/i';
+
+        return '' === $scheme || preg_match($pattern, $scheme);
     }
 
     /**
@@ -71,7 +77,6 @@ class Parser
     public function isHost(string $host): bool
     {
         return '' === $host
-            || filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)
             || $this->isIpv6Host($host)
             || $this->isRegisteredName($host);
     }
@@ -87,8 +92,13 @@ class Parser
      */
     public function isPort($port): bool
     {
-        return in_array($port, [null, ''], true)
-            || filter_var($port, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 65535]]);
+        static $pattern = '/^[0-9]+$/';
+
+        if (null === $port || '' === $port) {
+            return true;
+        }
+
+        return (bool) preg_match($pattern, (string) $port);
     }
 
     /**
@@ -152,6 +162,8 @@ class Parser
      */
     public function parse(string $uri): array
     {
+        static $pattern = '/[\x00-\x1f\x7f]/';
+
         //simple URI which do not need any parsing
         static $simple_uri = [
             '' => [],
@@ -166,7 +178,7 @@ class Parser
             return array_merge(self::URI_COMPONENTS, $simple_uri[$uri]);
         }
 
-        if (strlen($uri) !== strcspn($uri, self::INVALID_URI_CHARS)) {
+        if (preg_match($pattern, $uri)) {
             throw Exception::createFromInvalidCharacters($uri);
         }
 
@@ -174,7 +186,7 @@ class Parser
         $first_char = $uri[0];
 
         //The URI is made of the fragment only
-        if ('#' == $first_char) {
+        if ('#' === $first_char) {
             $components = self::URI_COMPONENTS;
             $components['fragment'] = (string) substr($uri, 1);
 
@@ -182,9 +194,9 @@ class Parser
         }
 
         //The URI is made of the query and fragment
-        if ('?' == $first_char) {
+        if ('?' === $first_char) {
             $components = self::URI_COMPONENTS;
-            list($components['query'], $components['fragment']) = explode('#', substr($uri, 1), 2) + [null, null];
+            list($components['query'], $components['fragment']) = explode('#', substr($uri, 1), 2) + [1 => null];
 
             return $components;
         }
@@ -195,7 +207,7 @@ class Parser
         }
 
         //The URI is made of a path, query and fragment
-        if ('/' == $first_char || false === strpos($uri, ':')) {
+        if ('/' === $first_char || false === strpos($uri, ':')) {
             return $this->parsePathQueryAndFragment($uri);
         }
 
@@ -235,10 +247,10 @@ class Parser
 
         //Parsing is done from the right upmost part to the left
         //1 - detect fragment, query and path part if any
-        list($remaining_uri, $components['fragment']) = explode('#', $remaining_uri, 2) + [null, null];
-        list($remaining_uri, $components['query']) = explode('?', $remaining_uri, 2) + [null, null];
+        list($remaining_uri, $components['fragment']) = explode('#', $remaining_uri, 2) + [1 => null];
+        list($remaining_uri, $components['query']) = explode('?', $remaining_uri, 2) + [1 => null];
         if (false !== ($pos = strpos($remaining_uri, '/'))) {
-            list($remaining_uri, $components['path']) = explode('/', $remaining_uri, 2) + [null, null];
+            list($remaining_uri, $components['path']) = explode('/', $remaining_uri, 2) + [1 => null];
             $components['path'] = '/'.$components['path'];
         }
 
@@ -252,10 +264,10 @@ class Parser
 
         //otherwise we split the authority into the user information and the hostname parts
         $parts = explode('@', $remaining_uri, 2);
-        $hostname = array_pop($parts);
-        $user_info = array_pop($parts);
+        $hostname = $parts[1] ?? $parts[0];
+        $user_info = isset($parts[1]) ? $parts[0] : null;
         if (null !== $user_info) {
-            list($components['user'], $components['pass']) = explode(':', $user_info, 2) + [null, null];
+            list($components['user'], $components['pass']) = explode(':', $user_info, 2) + [1 => null];
         }
         list($components['host'], $components['port']) = $this->parseHostname($hostname);
 
@@ -274,13 +286,13 @@ class Parser
     protected function parseHostname(string $hostname): array
     {
         if (false === strpos($hostname, '[')) {
-            list($host, $port) = explode(':', $hostname, 2) + [null, null];
+            list($host, $port) = explode(':', $hostname, 2) + [1 => null];
 
             return [$this->filterHost($host), $this->filterPort($port)];
         }
 
         $delimiter_offset = strpos($hostname, ']') + 1;
-        if (isset($hostname[$delimiter_offset]) && ':' != $hostname[$delimiter_offset]) {
+        if (isset($hostname[$delimiter_offset]) && ':' !== $hostname[$delimiter_offset]) {
             throw Exception::createFromInvalidHostname($hostname);
         }
 
@@ -320,7 +332,7 @@ class Parser
      */
     protected function isIpv6Host(string $ipv6): bool
     {
-        if ('][' !== substr($ipv6.$ipv6, strlen($ipv6) - 1, 2)) {
+        if ('[' !== ($ipv6[0] ?? '') || ']' !== substr($ipv6, -1)) {
             return false;
         }
 
@@ -339,13 +351,11 @@ class Parser
             return false;
         }
 
-        $reducer = function (string $carry, string $char): string {
-            return $carry.str_pad(decbin(ord($char)), 8, '0', STR_PAD_LEFT);
-        };
+        //Only the address block fe80::/10 can have a Zone ID attach to
+        //let's detect the link local significant 10 bits
+        static $address_block = "\xfe\x80";
 
-        $res = array_reduce(str_split(unpack('A16', inet_pton($ipv6))[1]), $reducer, '');
-
-        return substr($res, 0, 10) === self::LOCAL_LINK_PREFIX;
+        return substr(inet_pton($ipv6) & $address_block, 0, 2) === $address_block;
     }
 
     /**
@@ -366,18 +376,31 @@ class Parser
      */
     protected function isRegisteredName(string $host): bool
     {
-        if ('.' === substr($host, -1, 1)) {
-            $host = substr($host, 0, -1);
+        // Note that unreserved is purposely missing . as it is used to separate labels.
+        static $reg_name = '/(?(DEFINE)
+                (?<unreserved>[a-z0-9_~\-])
+                (?<sub_delims>[!$&\'()*+,;=])
+                (?<encoded>%[A-F0-9]{2})
+                (?<reg_name>(?:(?&unreserved)|(?&sub_delims)|(?&encoded))*)
+            )
+            ^(?:(?&reg_name)\.)*(?&reg_name)\.?$/imx';
+
+        static $gen_delims = '/[:\/?#\[\]@ ]/'; // Also includes space.
+
+        if (preg_match($reg_name, $host)) {
+            return true;
         }
 
-        $labels = array_map([$this, 'toAscii'], explode('.', $host));
+        if (preg_match($gen_delims, $host)) {
+            return false;
+        }
 
-        return 127 > count($labels)
-            && 253 > strlen(implode('.', $labels))
-            && $labels === array_filter($labels, [$this, 'isHostLabel']);
+        return (bool) idn_to_ascii($host, IDNA_NONTRANSITIONAL_TO_ASCII, INTL_IDNA_VARIANT_UTS46);
     }
 
     /**
+     * @deprecated Will be removed in v2.0
+     *
      * Convert a registered name label to its IDNA ASCII form.
      *
      * Conversion is done only if the label contains none valid label characters
@@ -390,25 +413,24 @@ class Parser
      */
     protected function toAscii(string $label)
     {
+        trigger_error(
+            self::class . '::' . __METHOD__ . ' is deprecated and will be removed in a future version',
+            E_USER_DEPRECATED
+        );
+
         if (false !== strpos($label, '%')) {
             $label = rawurldecode($label);
-        }
-
-        if (strlen($label) === strspn($label, self::LABEL_VALID_STARTING_CHARS.'-')) {
-            return $label;
         }
 
         return idn_to_ascii($label, IDNA_NONTRANSITIONAL_TO_ASCII, INTL_IDNA_VARIANT_UTS46);
     }
 
     /**
+     * @deprecated Will be removed in v2.0
+     *
      * Returns whether the registered name label is valid.
      *
-     * A valid registered name label MUST:
-     *
-     * - not be empty
-     * - contain 63 characters or less
-     * - conform to the following ABNF
+     * A valid registered name label MUST conform to the following ABNF
      *
      * reg-name = *( unreserved / pct-encoded / sub-delims )
      *
@@ -420,6 +442,11 @@ class Parser
      */
     protected function isHostLabel($label): bool
     {
+        trigger_error(
+            self::class . '::' . __METHOD__ . ' is deprecated and will be removed in a future version',
+            E_USER_DEPRECATED
+        );
+
         return '' != $label
             && 63 >= strlen($label)
             && strlen($label) == strspn($label, self::LABEL_VALID_STARTING_CHARS.'-_~'.self::SUB_DELIMITERS);
@@ -438,15 +465,17 @@ class Parser
      */
     protected function filterPort($port)
     {
-        if (in_array($port, [null, false, ''], true)) {
+        static $pattern = '/^[0-9]+$/';
+
+        if (null === $port || false === $port || '' === $port) {
             return null;
         }
 
-        if (!$this->isPort($port)) {
+        if (!preg_match($pattern, (string) $port)) {
             throw Exception::createFromInvalidPort($port);
         }
 
-        return filter_var($port, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 65535]]);
+        return (int) $port;
     }
 
 
@@ -489,10 +518,10 @@ class Parser
 
         //Parsing is done from the right upmost part to the left
         //1 - detect the fragment part if any
-        list($remaining_uri, $components['fragment']) = explode('#', $uri, 2) + [null, null];
+        list($remaining_uri, $components['fragment']) = explode('#', $uri, 2) + [1 => null];
 
         //2 - detect the query and the path part
-        list($components['path'], $components['query']) = explode('?', $remaining_uri, 2) + [null, null];
+        list($components['path'], $components['query']) = explode('?', $remaining_uri, 2) + [1 => null];
 
         return $components;
     }
@@ -530,8 +559,8 @@ class Parser
     {
         //1 - we split the URI on the first detected colon character
         $parts = explode(':', $uri, 2);
-        $remaining_uri = array_pop($parts);
-        $scheme = array_shift($parts);
+        $remaining_uri = $parts[1] ?? $parts[0];
+        $scheme = isset($parts[1]) ? $parts[0] : null;
 
         //1.1 - a scheme can not be empty (ie a URI can not start with a colon)
         if ('' === $scheme) {
@@ -572,10 +601,10 @@ class Parser
 
         //2.5 - Parsing is done from the right upmost part to the left from the scheme specific part
         //2.5.1 - detect the fragment part if any
-        list($remaining_uri, $components['fragment']) = explode('#', $remaining_uri, 2) + [null, null];
+        list($remaining_uri, $components['fragment']) = explode('#', $remaining_uri, 2) + [1 => null];
 
         //2.5.2 - detect the part and query part if any
-        list($components['path'], $components['query']) = explode('?', $remaining_uri, 2) + [null, null];
+        list($components['path'], $components['query']) = explode('?', $remaining_uri, 2) + [1 => null];
 
         return $components;
     }
