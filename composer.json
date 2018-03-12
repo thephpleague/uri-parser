@@ -6,6 +6,7 @@
         "url",
         "uri",
         "rfc3986",
+        "rfc3987",
         "parse_url",
         "parser"
     ],
@@ -19,7 +20,6 @@
         }
     ],
     "require": {
-        "ext-intl" : "*",
         "php" : ">=7.0.0"
     },
     "require-dev": {
@@ -41,6 +41,7 @@
         }
     },
     "suggest": {
+        "ext-intl" : "Allow parsing RFC3987 compliant hosts",
         "league/uri-schemes": "Allow validating and normalizing URI parsing results"
     },
     "scripts": {

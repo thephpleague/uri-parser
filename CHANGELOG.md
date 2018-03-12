@@ -12,7 +12,8 @@ All Notable changes to `league-uri-parser` will be documented in this file
 
 - Improve Host parsing according to RFC3986
 - Improve Parsing performance
-- using PHPstan
+- Using PHPstan
+- The library only requires the `ext/intl` extension if you are parsing RFC3987 compliant host.
 
 ### Deprecated
 

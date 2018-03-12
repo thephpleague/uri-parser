@@ -372,6 +372,8 @@ class Parser
      *
      * @param string $host
      *
+     * @throws if the registered name contains non-ASCII characters and IDN support is not available throught ext-intl
+     *
      * @return bool
      */
     protected function isRegisteredName(string $host): bool
@@ -383,7 +385,7 @@ class Parser
                 (?<encoded>%[A-F0-9]{2})
                 (?<reg_name>(?:(?&unreserved)|(?&sub_delims)|(?&encoded))*)
             )
-            ^(?:(?&reg_name)\.)*(?&reg_name)\.?$/imx';
+            ^(?:(?&reg_name)\.)*(?&reg_name)\.?$/ix';
 
         static $gen_delims = '/[:\/?#\[\]@ ]/'; // Also includes space.
 
@@ -395,9 +397,19 @@ class Parser
             return false;
         }
 
-        idn_to_ascii($host, IDNA_NONTRANSITIONAL_TO_ASCII, INTL_IDNA_VARIANT_UTS46, $arr);
+        static $idn_support = null;
+        $idn_support = $idn_support ?? function_exists('idn_to_ascii') && defined('INTL_IDNA_VARIANT_UTS46');
+        if ($idn_support) {
+            idn_to_ascii($host, IDNA_NONTRANSITIONAL_TO_ASCII, INTL_IDNA_VARIANT_UTS46, $arr);
 
-        return 0 === $arr['errors'];
+            return 0 === $arr['errors'];
+        }
+
+        // @codeCoverageIgnoreStart
+        // added because it is not possible in travis to disabled the ext/intl extension
+        // see travis issue https://github.com/travis-ci/travis-ci/issues/4701
+        throw new Exception(sprintf('the host `%s` could not be processed for IDN. Verify that ext/intl is installed for IDN support and that ICU is at least version 4.6.', $host));
+        // @codeCoverageIgnoreEnd
     }
 
     /**
@@ -427,7 +439,13 @@ class Parser
             $label = rawurldecode($label);
         }
 
-        return idn_to_ascii($label, IDNA_NONTRANSITIONAL_TO_ASCII, INTL_IDNA_VARIANT_UTS46);
+        static $idn_support = null;
+        $idn_support = $idn_support ?? function_exists('idn_to_ascii') && defined('INTL_IDNA_VARIANT_UTS46');
+        if ($idn_support) {
+            return idn_to_ascii($label, IDNA_NONTRANSITIONAL_TO_ASCII, INTL_IDNA_VARIANT_UTS46);
+        }
+
+        throw new Exception(sprintf('the label `%s` could not be processed for IDN. Verify that ext/intl is installed for IDN support and that ICU is at least version 4.6.', $label));
     }
 
     /**

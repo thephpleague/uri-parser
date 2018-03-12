@@ -12,7 +12,10 @@ System Requirements
 You need:
 
 - **PHP >= 7.0** but the latest stable version of PHP is recommended
-- the `intl` extension
+
+
+While the library no longer requires the `ext/intl` extension, it is strongly advise to install this extension if you are dealing with URIs containing non-ASCII host. Without the extension, the parser will throw an exception if such URI is parsed.
+
 
 Installation
 --------
