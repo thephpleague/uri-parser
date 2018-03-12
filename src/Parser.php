@@ -80,6 +80,97 @@ class Parser
             || $this->isIpv6Host($host)
             || $this->isRegisteredName($host);
     }
+    /**
+     * Validate an IPv6 host.
+     *
+     * @see http://tools.ietf.org/html/rfc6874#section-2
+     * @see http://tools.ietf.org/html/rfc6874#section-4
+     *
+     * @param string $ipv6
+     *
+     * @return bool
+     */
+    protected function isIpv6Host(string $ipv6): bool
+    {
+        if ('[' !== ($ipv6[0] ?? '') || ']' !== substr($ipv6, -1)) {
+            return false;
+        }
+
+        $ipv6 = substr($ipv6, 1, -1);
+        if (false === ($pos = strpos($ipv6, '%'))) {
+            return (bool) filter_var($ipv6, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6);
+        }
+
+        $scope = rawurldecode(substr($ipv6, $pos));
+        if (strlen($scope) !== strcspn($scope, '?#@[]')) {
+            return false;
+        }
+
+        $ipv6 = substr($ipv6, 0, $pos);
+        if (!filter_var($ipv6, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
+            return false;
+        }
+
+        //Only the address block fe80::/10 can have a Zone ID attach to
+        //let's detect the link local significant 10 bits
+        static $address_block = "\xfe\x80";
+
+        return substr(inet_pton($ipv6) & $address_block, 0, 2) === $address_block;
+    }
+
+    /**
+     * Returns whether the hostname is valid.
+     *
+     * A valid registered name MUST:
+     *
+     * - contains at most 127 subdomains deep
+     * - be limited to 255 octets in length
+     *
+     * @see https://en.wikipedia.org/wiki/Subdomain
+     * @see https://tools.ietf.org/html/rfc1035#section-2.3.4
+     * @see https://blogs.msdn.microsoft.com/oldnewthing/20120412-00/?p=7873/
+     *
+     * @param string $host
+     *
+     * @throws if the registered name contains non-ASCII characters and IDN support is not available throught ext-intl
+     *
+     * @return bool
+     */
+    protected function isRegisteredName(string $host): bool
+    {
+        // Note that unreserved is purposely missing . as it is used to separate labels.
+        static $reg_name = '/(?(DEFINE)
+                (?<unreserved>[a-z0-9_~\-])
+                (?<sub_delims>[!$&\'()*+,;=])
+                (?<encoded>%[A-F0-9]{2})
+                (?<reg_name>(?:(?&unreserved)|(?&sub_delims)|(?&encoded))*)
+            )
+            ^(?:(?&reg_name)\.)*(?&reg_name)\.?$/ix';
+
+        static $gen_delims = '/[:\/?#\[\]@ ]/'; // Also includes space.
+
+        if (preg_match($reg_name, $host)) {
+            return true;
+        }
+
+        if (preg_match($gen_delims, $host)) {
+            return false;
+        }
+
+        static $idn_support = null;
+        $idn_support = $idn_support ?? function_exists('idn_to_ascii') && defined('INTL_IDNA_VARIANT_UTS46');
+        if ($idn_support) {
+            idn_to_ascii($host, IDNA_NONTRANSITIONAL_TO_ASCII, INTL_IDNA_VARIANT_UTS46, $arr);
+
+            return 0 === $arr['errors'];
+        }
+
+        // @codeCoverageIgnoreStart
+        // added because it is not possible in travis to disabled the ext/intl extension
+        // see travis issue https://github.com/travis-ci/travis-ci/issues/4701
+        throw new MissingIdnSupport(sprintf('the host `%s` could not be processed for IDN. Verify that ext/intl is installed for IDN support and that ICU is at least version 4.6.', $host));
+        // @codeCoverageIgnoreEnd
+    }
 
     /**
      * Returns whether a port is valid.
@@ -321,164 +412,6 @@ class Parser
     }
 
     /**
-     * Validate an IPv6 host.
-     *
-     * @see http://tools.ietf.org/html/rfc6874#section-2
-     * @see http://tools.ietf.org/html/rfc6874#section-4
-     *
-     * @param string $ipv6
-     *
-     * @return bool
-     */
-    protected function isIpv6Host(string $ipv6): bool
-    {
-        if ('[' !== ($ipv6[0] ?? '') || ']' !== substr($ipv6, -1)) {
-            return false;
-        }
-
-        $ipv6 = substr($ipv6, 1, -1);
-        if (false === ($pos = strpos($ipv6, '%'))) {
-            return (bool) filter_var($ipv6, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6);
-        }
-
-        $scope = rawurldecode(substr($ipv6, $pos));
-        if (strlen($scope) !== strcspn($scope, '?#@[]')) {
-            return false;
-        }
-
-        $ipv6 = substr($ipv6, 0, $pos);
-        if (!filter_var($ipv6, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
-            return false;
-        }
-
-        //Only the address block fe80::/10 can have a Zone ID attach to
-        //let's detect the link local significant 10 bits
-        static $address_block = "\xfe\x80";
-
-        return substr(inet_pton($ipv6) & $address_block, 0, 2) === $address_block;
-    }
-
-    /**
-     * Returns whether the hostname is valid.
-     *
-     * A valid registered name MUST:
-     *
-     * - contains at most 127 subdomains deep
-     * - be limited to 255 octets in length
-     *
-     * @see https://en.wikipedia.org/wiki/Subdomain
-     * @see https://tools.ietf.org/html/rfc1035#section-2.3.4
-     * @see https://blogs.msdn.microsoft.com/oldnewthing/20120412-00/?p=7873/
-     *
-     * @param string $host
-     *
-     * @throws if the registered name contains non-ASCII characters and IDN support is not available throught ext-intl
-     *
-     * @return bool
-     */
-    protected function isRegisteredName(string $host): bool
-    {
-        // Note that unreserved is purposely missing . as it is used to separate labels.
-        static $reg_name = '/(?(DEFINE)
-                (?<unreserved>[a-z0-9_~\-])
-                (?<sub_delims>[!$&\'()*+,;=])
-                (?<encoded>%[A-F0-9]{2})
-                (?<reg_name>(?:(?&unreserved)|(?&sub_delims)|(?&encoded))*)
-            )
-            ^(?:(?&reg_name)\.)*(?&reg_name)\.?$/ix';
-
-        static $gen_delims = '/[:\/?#\[\]@ ]/'; // Also includes space.
-
-        if (preg_match($reg_name, $host)) {
-            return true;
-        }
-
-        if (preg_match($gen_delims, $host)) {
-            return false;
-        }
-
-        static $idn_support = null;
-        $idn_support = $idn_support ?? function_exists('idn_to_ascii') && defined('INTL_IDNA_VARIANT_UTS46');
-        if ($idn_support) {
-            idn_to_ascii($host, IDNA_NONTRANSITIONAL_TO_ASCII, INTL_IDNA_VARIANT_UTS46, $arr);
-
-            return 0 === $arr['errors'];
-        }
-
-        // @codeCoverageIgnoreStart
-        // added because it is not possible in travis to disabled the ext/intl extension
-        // see travis issue https://github.com/travis-ci/travis-ci/issues/4701
-        throw new MissingIdnSupport(sprintf('the host `%s` could not be processed for IDN. Verify that ext/intl is installed for IDN support and that ICU is at least version 4.6.', $host));
-        // @codeCoverageIgnoreEnd
-    }
-
-    /**
-     * Convert a registered name label to its IDNA ASCII form.
-     *
-     * DEPRECATION WARNING! This method will be removed in the next major point release
-     *
-     * @deprecated 1.4.0 this method is no longer used to validate RFC3987 compliant host component
-     * @codeCoverageIgnore
-     *
-     * Conversion is done only if the label contains none valid label characters
-     * if a '%' sub delimiter is detected the label MUST be rawurldecode prior to
-     * making the conversion
-     *
-     * @param string $label
-     *
-     * @return string|false
-     */
-    protected function toAscii(string $label)
-    {
-        trigger_error(
-            self::class.'::'.__METHOD__.' is deprecated and will be removed in the next major point release',
-            E_USER_DEPRECATED
-        );
-
-        if (false !== strpos($label, '%')) {
-            $label = rawurldecode($label);
-        }
-
-        static $idn_support = null;
-        $idn_support = $idn_support ?? function_exists('idn_to_ascii') && defined('INTL_IDNA_VARIANT_UTS46');
-        if ($idn_support) {
-            return idn_to_ascii($label, IDNA_NONTRANSITIONAL_TO_ASCII, INTL_IDNA_VARIANT_UTS46);
-        }
-
-        throw new MissingIdnSupport(sprintf('the label `%s` could not be processed for IDN. Verify that ext/intl is installed for IDN support and that ICU is at least version 4.6.', $label));
-    }
-
-    /**
-     * Returns whether the registered name label is valid.
-     *
-     * DEPRECATION WARNING! This method will be removed in the next major point release
-     *
-     * @deprecated 1.4.0 this method is no longer used to validated the host component
-     * @codeCoverageIgnore
-     *
-     * A valid registered name label MUST conform to the following ABNF
-     *
-     * reg-name = *( unreserved / pct-encoded / sub-delims )
-     *
-     * @see https://tools.ietf.org/html/rfc3986#section-3.2.2
-     *
-     * @param string $label
-     *
-     * @return bool
-     */
-    protected function isHostLabel($label): bool
-    {
-        trigger_error(
-            self::class.'::'.__METHOD__.' is deprecated and will be removed in the next major point release',
-            E_USER_DEPRECATED
-        );
-
-        return '' != $label
-            && 63 >= strlen($label)
-            && strlen($label) == strspn($label, self::LABEL_VALID_STARTING_CHARS.'-_~'.self::SUB_DELIMITERS);
-    }
-
-    /**
      * Validate a port number.
      *
      * An exception is raised for ports outside the established TCP and UDP port ranges.
@@ -633,5 +566,71 @@ class Parser
         list($components['path'], $components['query']) = explode('?', $remaining_uri, 2) + [1 => null];
 
         return $components;
+    }
+
+    /**
+     * Convert a registered name label to its IDNA ASCII form.
+     *
+     * DEPRECATION WARNING! This method will be removed in the next major point release
+     *
+     * @deprecated 1.4.0 this method is no longer used to validate RFC3987 compliant host component
+     * @codeCoverageIgnore
+     *
+     * Conversion is done only if the label contains none valid label characters
+     * if a '%' sub delimiter is detected the label MUST be rawurldecode prior to
+     * making the conversion
+     *
+     * @param string $label
+     *
+     * @return string|false
+     */
+    protected function toAscii(string $label)
+    {
+        trigger_error(
+            self::class.'::'.__METHOD__.' is deprecated and will be removed in the next major point release',
+            E_USER_DEPRECATED
+        );
+
+        if (false !== strpos($label, '%')) {
+            $label = rawurldecode($label);
+        }
+
+        static $idn_support = null;
+        $idn_support = $idn_support ?? function_exists('idn_to_ascii') && defined('INTL_IDNA_VARIANT_UTS46');
+        if ($idn_support) {
+            return idn_to_ascii($label, IDNA_NONTRANSITIONAL_TO_ASCII, INTL_IDNA_VARIANT_UTS46);
+        }
+
+        throw new MissingIdnSupport(sprintf('the label `%s` could not be processed for IDN. Verify that ext/intl is installed for IDN support and that ICU is at least version 4.6.', $label));
+    }
+
+    /**
+     * Returns whether the registered name label is valid.
+     *
+     * DEPRECATION WARNING! This method will be removed in the next major point release
+     *
+     * @deprecated 1.4.0 this method is no longer used to validated the host component
+     * @codeCoverageIgnore
+     *
+     * A valid registered name label MUST conform to the following ABNF
+     *
+     * reg-name = *( unreserved / pct-encoded / sub-delims )
+     *
+     * @see https://tools.ietf.org/html/rfc3986#section-3.2.2
+     *
+     * @param string $label
+     *
+     * @return bool
+     */
+    protected function isHostLabel($label): bool
+    {
+        trigger_error(
+            self::class.'::'.__METHOD__.' is deprecated and will be removed in the next major point release',
+            E_USER_DEPRECATED
+        );
+
+        return '' != $label
+            && 63 >= strlen($label)
+            && strlen($label) == strspn($label, self::LABEL_VALID_STARTING_CHARS.'-_~'.self::SUB_DELIMITERS);
     }
 }
