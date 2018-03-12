@@ -163,6 +163,19 @@ class ParserTest extends TestCase
                     'fragment' => 'f',
                 ],
             ],
+            'URI with IP future' => [
+                'scheme://[vAF.1::2::3]/p?q#f',
+                [
+                    'scheme' => 'scheme',
+                    'user' => null,
+                    'pass' => null,
+                    'host' => '[vAF.1::2::3]',
+                    'port' => null,
+                    'path' => '/p',
+                    'query' => 'q',
+                    'fragment' => 'f',
+                ],
+            ],
             'URI without authority' => [
                 'scheme:path?query#fragment',
                 [
@@ -662,6 +675,7 @@ class ParserTest extends TestCase
             'invalid char on URI' => ["scheme://host/path/\r\n/toto"],
             'invalid path only URI' => ['2620:0:1cfe:face:b00c::3'],
             'invalid path PHP bug #72811' => ['[::1]:80'],
+            'invalid ipvfuture' => ['//[v6.::1]/p?q#f'],
         ];
     }
 

@@ -8,6 +8,7 @@ All Notable changes to `league-uri-parser` will be documented in this file
 
 - `MissingIdnSupport` exception which is thrown when trying to parse a possible RFC3987 compliant host
 when the `ext/intl` extension is missing or the ICU minimum version is not supported.
+- IPvFuture support
 
 ### Fixed
 
@@ -24,6 +25,7 @@ when the `ext/intl` extension is missing or the ICU minimum version is not suppo
 - `Parser::LABEL_VALID_STARTING_CHARS` internal constants
 - `Parser::LOCAL_LINK_PREFIX` internal constants
 - `Parser::UB_DELIMITERS` internal constants
+- `Parser::isIpv6host` internal method no longer used
 - `Parser::isHostLabel` internal method no longer used
 - `Parser::toAscii` internal method no longer used
 

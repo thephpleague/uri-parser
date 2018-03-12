@@ -77,37 +77,54 @@ class Parser
     public function isHost(string $host): bool
     {
         return '' === $host
-            || $this->isIpv6Host($host)
+            || $this->isIpHost($host)
             || $this->isRegisteredName($host);
     }
+
     /**
-     * Validate an IPv6 host.
+     * Validate a IPv6/IPvfuture host
      *
+     * @see http://tools.ietf.org/html/rfc3986#section-3.2.2
      * @see http://tools.ietf.org/html/rfc6874#section-2
      * @see http://tools.ietf.org/html/rfc6874#section-4
      *
-     * @param string $ipv6
+     * @param string $host
      *
      * @return bool
      */
-    protected function isIpv6Host(string $ipv6): bool
+    private function isIpHost(string $host): bool
     {
-        if ('[' !== ($ipv6[0] ?? '') || ']' !== substr($ipv6, -1)) {
+        if ('[' !== ($host[0] ?? '') || ']' !== substr($host, -1)) {
             return false;
         }
 
-        $ipv6 = substr($ipv6, 1, -1);
-        if (false === ($pos = strpos($ipv6, '%'))) {
-            return (bool) filter_var($ipv6, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6);
+        $ip = substr($host, 1, -1);
+        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
+            return true;
         }
 
-        $scope = rawurldecode(substr($ipv6, $pos));
-        if (strlen($scope) !== strcspn($scope, '?#@[]')) {
+        static $ip_future = '/^
+            v(?<version>[A-F0-9])+\.
+            (?:
+                (?<unreserved>[a-z0-9_~\-\.])|
+                (?<sub_delims>[!$&\'()*+,;=:])  # also include the : character
+            )+
+        $/ix';
+        if (preg_match($ip_future, $ip, $matches) && !in_array($matches['version'], ['4', '6'], true)) {
+            return true;
+        }
+
+        if (false === ($pos = strpos($ip, '%'))) {
             return false;
         }
 
-        $ipv6 = substr($ipv6, 0, $pos);
-        if (!filter_var($ipv6, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
+        static $gen_delims = '/[:\/?#\[\]@ ]/'; // Also includes space.
+        if (preg_match($gen_delims, rawurldecode(substr($ip, $pos)))) {
+            return false;
+        }
+
+        $ip = substr($ip, 0, $pos);
+        if (!filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
             return false;
         }
 
@@ -115,24 +132,19 @@ class Parser
         //let's detect the link local significant 10 bits
         static $address_block = "\xfe\x80";
 
-        return substr(inet_pton($ipv6) & $address_block, 0, 2) === $address_block;
+        return substr(inet_pton($ip) & $address_block, 0, 2) === $address_block;
     }
 
+
     /**
-     * Returns whether the hostname is valid.
+     * Returns whether the host is an IPv4 or a registered named
      *
-     * A valid registered name MUST:
-     *
-     * - contains at most 127 subdomains deep
-     * - be limited to 255 octets in length
-     *
-     * @see https://en.wikipedia.org/wiki/Subdomain
-     * @see https://tools.ietf.org/html/rfc1035#section-2.3.4
-     * @see https://blogs.msdn.microsoft.com/oldnewthing/20120412-00/?p=7873/
+     * @see http://tools.ietf.org/html/rfc3986#section-3.2.2
      *
      * @param string $host
      *
-     * @throws if the registered name contains non-ASCII characters and IDN support is not available throught ext-intl
+     * @throws MissingIdnSupport if the registered name contains non-ASCII characters
+     *                           and IDN support or ICU requirement are not available or met.
      *
      * @return bool
      */
@@ -632,5 +644,53 @@ class Parser
         return '' != $label
             && 63 >= strlen($label)
             && strlen($label) == strspn($label, self::LABEL_VALID_STARTING_CHARS.'-_~'.self::SUB_DELIMITERS);
+    }
+
+    /**
+     * Validate an IPv6 host.
+     *
+     * DEPRECATION WARNING! This method will be removed in the next major point release
+     *
+     * @deprecated 1.4.0 this method is no longer used to validated the host component
+     * @codeCoverageIgnore
+     *
+     * @see http://tools.ietf.org/html/rfc6874#section-2
+     * @see http://tools.ietf.org/html/rfc6874#section-4
+     *
+     * @param string $ipv6
+     *
+     * @return bool
+     */
+    protected function isIpv6Host(string $ipv6): bool
+    {
+        trigger_error(
+            self::class.'::'.__METHOD__.' is deprecated and will be removed in the next major point release',
+            E_USER_DEPRECATED
+        );
+
+        if ('[' !== ($ipv6[0] ?? '') || ']' !== substr($ipv6, -1)) {
+            return false;
+        }
+
+        $ipv6 = substr($ipv6, 1, -1);
+        if (false === ($pos = strpos($ipv6, '%'))) {
+            return (bool) filter_var($ipv6, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6);
+        }
+
+        $scope = rawurldecode(substr($ipv6, $pos));
+        if (strlen($scope) !== strcspn($scope, '?#@[]')) {
+            return false;
+        }
+
+        $ipv6 = substr($ipv6, 0, $pos);
+        if (!filter_var($ipv6, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
+            return false;
+        }
+
+        //Only the address block fe80::/10 can have a Zone ID attach to
+        //let's detect the link local significant 10 bits
+        static $address_block = "\xfe\x80";
+
+        return substr(inet_pton($ipv6) & $address_block, 0, 2) === $address_block;
     }
 }
