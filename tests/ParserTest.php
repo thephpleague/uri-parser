@@ -676,6 +676,7 @@ class ParserTest extends TestCase
             'invalid path only URI' => ['2620:0:1cfe:face:b00c::3'],
             'invalid path PHP bug #72811' => ['[::1]:80'],
             'invalid ipvfuture' => ['//[v6.::1]/p?q#f'],
+            'invalid RFC3987 host' => ['//a⒈com/p?q#f'],
         ];
     }
 
@@ -694,9 +695,9 @@ class ParserTest extends TestCase
         $long_label = implode('.', array_fill(0, 62, 'a'));
 
         return [
-            'RFC3987 registered name' => ['bébé.bé', true],
-            'RFC3986 registered name (1)' => ['bebe.be', true],
-            'RFC3986 registered name (2)' => ['www._fußball.com', true],
+            'RFC3986 registered name' => ['bebe.be', true],
+            'RFC3987 registered name (1)' => ['bébé.bé', true],
+            'RFC3987 registered name (2)' => ['www._fußball.com', true],
             'Sub-domain beginning with underscore' => ['_tcp.example.com', true],
             'Host with urlencoded label' => ['b%C3%A9b%C3%A9.be', true],
             'IDN host with delims' => ['www.fuß*+,;ball.com', true],

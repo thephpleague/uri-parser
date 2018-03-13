@@ -158,14 +158,13 @@ class Parser
                 (?<reg_name>(?:(?&unreserved)|(?&sub_delims)|(?&encoded))*)
             )
             ^(?:(?&reg_name)\.)*(?&reg_name)\.?$/ix';
-
-        static $gen_delims = '/[:\/?#\[\]@ ]/'; // Also includes space.
-
         if (preg_match($reg_name, $host)) {
             return true;
         }
 
-        if (preg_match($gen_delims, $host)) {
+        //to test IDN host non-ascii characters must be present in the host
+        static $idn_pattern = '/[^\x20-\x7f]/';
+        if (!preg_match($idn_pattern, $host)) {
             return false;
         }
 
