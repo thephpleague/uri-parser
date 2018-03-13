@@ -15,19 +15,19 @@ when the `ext/intl` extension is missing or the ICU minimum version is not suppo
 - Improve Host parsing according to RFC3986
 - Improve Parsing performance
 - Using PHPstan
-- The library only requires the `ext/intl` extension if you are parsing RFC3987 compliant host.
+- The library only requires the `intl` extension if you need to parse RFC3987 compliant host.
 
 ### Deprecated
 
-- `Parser::INVALID_URI_CHARS` internal constants
-- `Parser::CHEME_VALID_STARTING_CHARS` internal constants
-- `Parser::SCHEME_VALID_CHARS` internal constants
-- `Parser::LABEL_VALID_STARTING_CHARS` internal constants
-- `Parser::LOCAL_LINK_PREFIX` internal constants
-- `Parser::UB_DELIMITERS` internal constants
-- `Parser::isIpv6host` internal method no longer used
-- `Parser::isHostLabel` internal method no longer used
-- `Parser::toAscii` internal method no longer used
+- `Parser::INVALID_URI_CHARS` internal constants no longer in use
+- `Parser::CHEME_VALID_STARTING_CHARS` internal constants no longer in use
+- `Parser::SCHEME_VALID_CHARS` internal constants no longer in use
+- `Parser::LABEL_VALID_STARTING_CHARS` internal constants no longer in use
+- `Parser::LOCAL_LINK_PREFIX` internal constants no longer in use
+- `Parser::UB_DELIMITERS` internal constants no longer in use
+- `Parser::isIpv6host` internal method no longer in use
+- `Parser::isHostLabel` internal method no longer in use
+- `Parser::toAscii` internal method no longer in use
 
 ### Removed
 

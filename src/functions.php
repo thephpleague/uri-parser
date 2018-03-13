@@ -100,7 +100,7 @@ function parse(string $uri): array
 
 /**
  * Generate an URI string representation from its parsed representation
- * returned by Parser::parse() or PHP's parse_url.
+ * returned by League\Uri\Parser::parse() or PHP's parse_url.
  *
  * If you supply your own array, you are responsible for providing
  * valid components without their URI delimiters.

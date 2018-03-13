@@ -351,7 +351,7 @@ class Parser
         //1 - detect fragment, query and path part if any
         list($remaining_uri, $components['fragment']) = explode('#', $remaining_uri, 2) + [1 => null];
         list($remaining_uri, $components['query']) = explode('?', $remaining_uri, 2) + [1 => null];
-        if (false !== ($pos = strpos($remaining_uri, '/'))) {
+        if (false !== strpos($remaining_uri, '/')) {
             list($remaining_uri, $components['path']) = explode('/', $remaining_uri, 2) + [1 => null];
             $components['path'] = '/'.$components['path'];
         }
