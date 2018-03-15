@@ -47,9 +47,7 @@ final class Parser
      */
     public function isHost(string $host): bool
     {
-        return '' === $host
-            || $this->isIpHost($host)
-            || $this->isRegisteredName($host);
+        return $this->isIpHost($host) || $this->isRegisteredName($host);
     }
 
     /**
@@ -253,7 +251,8 @@ final class Parser
         //The URI is made of the query and fragment
         if ('?' === $first_char) {
             $components = self::URI_COMPONENTS;
-            list($components['query'], $components['fragment']) = \explode('#', \substr($uri, 1), 2) + [1 => null];
+            list(, $partial) = \explode('?', $uri, 2);
+            list($components['query'], $components['fragment']) = \explode('#', $partial, 2) + [1 => null];
 
             return $components;
         }
@@ -308,6 +307,8 @@ final class Parser
      *
      * @param null|string $authority
      *
+     * @throws Exception If the host is invalid
+     *
      * @return array
      */
     private function parseAuthority(string $authority = null): array
@@ -328,7 +329,11 @@ final class Parser
             list($components['user'], $components['pass']) = \explode(':', $user_info, 2) + [1 => null];
         }
         list($host, $port) = $this->parseHostname($hostname);
-        $components['host'] = $this->filterHost($host);
+        if (!$this->isHost($host)) {
+            throw new Exception(\sprintf('The host `%s` is invalid', $host));
+        }
+
+        $components['host'] = $host;
         $components['port'] = $this->filterPort($port);
 
         return $components;
@@ -345,17 +350,17 @@ final class Parser
      */
     private function parseHostname(string $hostname): array
     {
-        if (false === \strpos($hostname, '[')) {
-            return \explode(':', $hostname, 2) + [1 => null];
+        if (false === ($pos = \strpos($hostname, '['))) {
+            return \explode(':', $hostname, 2) + [1 => ''];
         }
 
-        if (false === ($delimiter_offset = \strpos($hostname, ']'))) {
+        if (0 !== $pos || false === ($delimiter_offset = \strpos($hostname, ']'))) {
             throw new Exception(\sprintf('The hostname `%s` is invalid', $hostname));
         }
 
         ++$delimiter_offset;
         if (!isset($hostname[$delimiter_offset])) {
-            return [$hostname, null];
+            return [$hostname, ''];
         }
 
         if (':' === $hostname[$delimiter_offset]) {
@@ -366,37 +371,19 @@ final class Parser
     }
 
     /**
-     * Validate the host component.
-     *
-     * @param null|string $host
-     *
-     * @throws Exception If the host is invalid
-     *
-     * @return null|string
-     */
-    private function filterHost($host)
-    {
-        if (null === $host || $this->isHost($host)) {
-            return $host;
-        }
-
-        throw new Exception(\sprintf('The host `%s` is invalid', $host));
-    }
-
-    /**
      * Validate a port number.
      *
      * An exception is raised for ports outside the established TCP and UDP port ranges.
      *
-     * @param mixed $port the port number
+     * @param string $port the port number
      *
      * @throws Exception If the port number is invalid.
      *
      * @return null|int
      */
-    private function filterPort($port)
+    private function filterPort(string $port)
     {
-        if (null === $port || '' === $port) {
+        if ('' === $port) {
             return null;
         }
 
