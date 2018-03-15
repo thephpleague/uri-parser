@@ -692,7 +692,7 @@ class ParserTest extends TestCase
 
     public function validHostProvider()
     {
-        $long_label = implode('.', array_fill(0, 62, 'a'));
+        $long_label = \implode('.', \array_fill(0, 62, 'a'));
 
         return [
             'RFC3986 registered name' => ['bebe.be', true],

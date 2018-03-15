@@ -229,7 +229,7 @@ final class Parser
 
         static $pattern = '/[\x00-\x1f\x7f]/';
         if (\preg_match($pattern, $uri)) {
-            throw new Exception(sprintf('The uri `%s` contains invalid characters', $uri));
+            throw new Exception(\sprintf('The uri `%s` contains invalid characters', $uri));
         }
 
         //if the first character is a known URI delimiter parsing can be simplified

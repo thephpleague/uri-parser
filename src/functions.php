@@ -50,7 +50,7 @@ function is_port($port): bool
         return true;
     }
 
-    return false !== filter_var($port, FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
+    return false !== \filter_var($port, \FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
 }
 
 /**
@@ -66,7 +66,7 @@ function is_scheme(string $scheme): bool
 {
     static $pattern = '/^[a-z][a-z\+\.\-]*$/i';
 
-    return '' === $scheme || preg_match($pattern, $scheme);
+    return '' === $scheme || \preg_match($pattern, $scheme);
 }
 
 /**
