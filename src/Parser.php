@@ -35,22 +35,6 @@ final class Parser
     ];
 
     /**
-     * Returns whether a scheme is valid.
-     *
-     * @see https://tools.ietf.org/html/rfc3986#section-3.1
-     *
-     * @param string $scheme
-     *
-     * @return bool
-     */
-    public function isScheme(string $scheme): bool
-    {
-        static $pattern = '/^[a-z][a-z\+\.\-]*$/i';
-
-        return '' === $scheme || preg_match($pattern, $scheme);
-    }
-
-    /**
      * Returns whether a hostname is valid.
      *
      * @see https://tools.ietf.org/html/rfc3986#section-3.2.2
@@ -79,12 +63,12 @@ final class Parser
      */
     private function isIpHost(string $host): bool
     {
-        if ('[' !== ($host[0] ?? '') || ']' !== substr($host, -1)) {
+        if ('[' !== ($host[0] ?? '') || ']' !== \substr($host, -1)) {
             return false;
         }
 
-        $ip = substr($host, 1, -1);
-        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
+        $ip = \substr($host, 1, -1);
+        if (\filter_var($ip, \FILTER_VALIDATE_IP, \FILTER_FLAG_IPV6)) {
             return true;
         }
 
@@ -95,21 +79,21 @@ final class Parser
                 (?<sub_delims>[!$&\'()*+,;=:])  # also include the : character
             )+
         $/ix';
-        if (preg_match($ip_future, $ip, $matches) && !in_array($matches['version'], ['4', '6'], true)) {
+        if (\preg_match($ip_future, $ip, $matches) && !\in_array($matches['version'], ['4', '6'], true)) {
             return true;
         }
 
-        if (false === ($pos = strpos($ip, '%'))) {
+        if (false === ($pos = \strpos($ip, '%'))) {
             return false;
         }
 
         static $gen_delims = '/[:\/?#\[\]@ ]/'; // Also includes space.
-        if (preg_match($gen_delims, rawurldecode(substr($ip, $pos)))) {
+        if (\preg_match($gen_delims, \rawurldecode(\substr($ip, $pos)))) {
             return false;
         }
 
-        $ip = substr($ip, 0, $pos);
-        if (!filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
+        $ip = \substr($ip, 0, $pos);
+        if (!\filter_var($ip, \FILTER_VALIDATE_IP, \FILTER_FLAG_IPV6)) {
             return false;
         }
 
@@ -117,7 +101,7 @@ final class Parser
         //let's detect the link local significant 10 bits
         static $address_block = "\xfe\x80";
 
-        return substr(inet_pton($ip) & $address_block, 0, 2) === $address_block;
+        return \substr(\inet_pton($ip) & $address_block, 0, 2) === $address_block;
     }
 
 
@@ -143,20 +127,20 @@ final class Parser
                 (?<reg_name>(?:(?&unreserved)|(?&sub_delims)|(?&encoded))*)
             )
             ^(?:(?&reg_name)\.)*(?&reg_name)\.?$/ix';
-        if (preg_match($reg_name, $host)) {
+        if (\preg_match($reg_name, $host)) {
             return true;
         }
 
         //to test IDN host non-ascii characters must be present in the host
         static $idn_pattern = '/[^\x20-\x7f]/';
-        if (!preg_match($idn_pattern, $host)) {
+        if (!\preg_match($idn_pattern, $host)) {
             return false;
         }
 
         static $idn_support = null;
-        $idn_support = $idn_support ?? function_exists('idn_to_ascii') && defined('INTL_IDNA_VARIANT_UTS46');
+        $idn_support = $idn_support ?? \function_exists('\idn_to_ascii') && \defined('\INTL_IDNA_VARIANT_UTS46');
         if ($idn_support) {
-            idn_to_ascii($host, IDNA_NONTRANSITIONAL_TO_ASCII, INTL_IDNA_VARIANT_UTS46, $arr);
+            \idn_to_ascii($host, \IDNA_NONTRANSITIONAL_TO_ASCII, \INTL_IDNA_VARIANT_UTS46, $arr);
 
             return 0 === $arr['errors'];
         }
@@ -164,26 +148,8 @@ final class Parser
         // @codeCoverageIgnoreStart
         // added because it is not possible in travis to disabled the ext/intl extension
         // see travis issue https://github.com/travis-ci/travis-ci/issues/4701
-        throw new MissingIdnSupport(sprintf('the host `%s` could not be processed for IDN. Verify that ext/intl is installed for IDN support and that ICU is at least version 4.6.', $host));
+        throw new MissingIdnSupport(\sprintf('the host `%s` could not be processed for IDN. Verify that ext/intl is installed for IDN support and that ICU is at least version 4.6.', $host));
         // @codeCoverageIgnoreEnd
-    }
-
-    /**
-     * Returns whether a port is valid.
-     *
-     * @see https://tools.ietf.org/html/rfc3986#section-3.2.2
-     *
-     * @param mixed $port
-     *
-     * @return bool
-     */
-    public function isPort($port): bool
-    {
-        if (null === $port || '' === $port) {
-            return true;
-        }
-
-        return false !== filter_var($port, FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
     }
 
     /**
@@ -258,11 +224,11 @@ final class Parser
         ];
 
         if (isset($simple_uri[$uri])) {
-            return array_merge(self::URI_COMPONENTS, $simple_uri[$uri]);
+            return \array_merge(self::URI_COMPONENTS, $simple_uri[$uri]);
         }
 
         static $pattern = '/[\x00-\x1f\x7f]/';
-        if (preg_match($pattern, $uri)) {
+        if (\preg_match($pattern, $uri)) {
             throw new Exception(sprintf('The uri `%s` contains invalid characters', $uri));
         }
 
@@ -272,7 +238,7 @@ final class Parser
         //The URI is made of the fragment only
         if ('#' === $first_char) {
             $components = self::URI_COMPONENTS;
-            $components['fragment'] = (string) substr($uri, 1);
+            $components['fragment'] = (string) \substr($uri, 1);
 
             return $components;
         }
@@ -280,7 +246,7 @@ final class Parser
         //The URI is made of the query and fragment
         if ('?' === $first_char) {
             $components = self::URI_COMPONENTS;
-            list($components['query'], $components['fragment']) = explode('#', substr($uri, 1), 2) + [1 => null];
+            list($components['query'], $components['fragment']) = \explode('#', \substr($uri, 1), 2) + [1 => null];
 
             return $components;
         }
@@ -311,14 +277,14 @@ final class Parser
             (?<fragment>\#(?<fcontent>.*))?        # URI fragment component
         ,x';
 
-        preg_match($uri_pattern, $uri, $parts);
+        \preg_match($uri_pattern, $uri, $parts);
         $parts += ['query' => '', 'fragment' => ''];
 
-        if (':' === $parts['scheme'] || !$this->isScheme($parts['scontent'])) {
-            throw new Exception(sprintf('The submitted uri `%s` contains an invalid scheme', $uri));
+        if (':' === $parts['scheme'] || !is_scheme($parts['scontent'])) {
+            throw new Exception(\sprintf('The submitted uri `%s` contains an invalid scheme', $uri));
         }
 
-        return array_merge(
+        return \array_merge(
             self::URI_COMPONENTS,
             $this->parseAuthority($parts),
             [
@@ -349,11 +315,11 @@ final class Parser
 
         //otherwise we split the authority into the user information and the hostname parts
         $components = [];
-        $auth_parts = explode('@', $uri_parts['acontent'], 2);
+        $auth_parts = \explode('@', $uri_parts['acontent'], 2);
         $hostname = $auth_parts[1] ?? $auth_parts[0];
         $user_info = isset($auth_parts[1]) ? $auth_parts[0] : null;
         if (null !== $user_info) {
-            list($components['user'], $components['pass']) = explode(':', $user_info, 2) + [1 => null];
+            list($components['user'], $components['pass']) = \explode(':', $user_info, 2) + [1 => null];
         }
         list($host, $port) = $this->parseHostname($hostname);
         $components['host'] = $this->filterHost($host);
@@ -373,12 +339,12 @@ final class Parser
      */
     private function parseHostname(string $hostname): array
     {
-        if (false === strpos($hostname, '[')) {
-            return explode(':', $hostname, 2) + [1 => null];
+        if (false === \strpos($hostname, '[')) {
+            return \explode(':', $hostname, 2) + [1 => null];
         }
 
-        if (false === ($delimiter_offset = strpos($hostname, ']'))) {
-            throw new Exception(sprintf('The hostname `%s` is invalid', $hostname));
+        if (false === ($delimiter_offset = \strpos($hostname, ']'))) {
+            throw new Exception(\sprintf('The hostname `%s` is invalid', $hostname));
         }
 
         ++$delimiter_offset;
@@ -387,10 +353,10 @@ final class Parser
         }
 
         if (':' === $hostname[$delimiter_offset]) {
-            return [substr($hostname, 0, $delimiter_offset), substr($hostname, ++$delimiter_offset)];
+            return [\substr($hostname, 0, $delimiter_offset), \substr($hostname, ++$delimiter_offset)];
         }
 
-        throw new Exception(sprintf('The hostname `%s` is invalid', $hostname));
+        throw new Exception(\sprintf('The hostname `%s` is invalid', $hostname));
     }
 
     /**
@@ -408,7 +374,7 @@ final class Parser
             return $host;
         }
 
-        throw new Exception(sprintf('The host `%s` is invalid', $host));
+        throw new Exception(\sprintf('The host `%s` is invalid', $host));
     }
 
     /**
@@ -428,10 +394,10 @@ final class Parser
             return null;
         }
 
-        if (false !== ($res = filter_var($port, FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]))) {
+        if (false !== ($res = \filter_var($port, \FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]))) {
             return $res;
         }
 
-        throw new Exception(sprintf('The submitted port `%s` is invalid', $port));
+        throw new Exception(\sprintf('The submitted port `%s` is invalid', $port));
     }
 }
