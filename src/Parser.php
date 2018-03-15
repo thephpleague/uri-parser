@@ -245,7 +245,7 @@ final class Parser
         //The URI is made of the fragment only
         if ('#' === $first_char) {
             $components = self::URI_COMPONENTS;
-            $components['fragment'] = (string) \substr($uri, 1);
+            list(, $components['fragment']) = \explode('#', $uri, 2);
 
             return $components;
         }
@@ -293,7 +293,7 @@ final class Parser
 
         return \array_merge(
             self::URI_COMPONENTS,
-            $this->parseAuthority($parts),
+            $this->parseAuthority('' === $parts['authority'] ? null : $parts['acontent']),
             [
                 'path' => $parts['path'],
                 'scheme' => '' === $parts['scheme'] ? null : $parts['scontent'],
@@ -306,25 +306,24 @@ final class Parser
     /**
      * Parse the URI authority part.
      *
-     * @param array $uri_parts
+     * @param null|string $authority
      *
      * @return array
      */
-    private function parseAuthority(array $uri_parts): array
+    private function parseAuthority(string $authority = null): array
     {
-        if ('' === $uri_parts['authority']) {
+        if (null === $authority) {
             return [];
         }
 
-        if ('' === $uri_parts['acontent']) {
+        if ('' === $authority) {
             return ['host' => ''];
         }
 
-        //otherwise we split the authority into the user information and the hostname parts
+        $parts = \explode('@', $authority, 2);
+        $hostname = $parts[1] ?? $parts[0];
+        $user_info = isset($parts[1]) ? $parts[0] : null;
         $components = [];
-        $auth_parts = \explode('@', $uri_parts['acontent'], 2);
-        $hostname = $auth_parts[1] ?? $auth_parts[0];
-        $user_info = isset($auth_parts[1]) ? $auth_parts[0] : null;
         if (null !== $user_info) {
             list($components['user'], $components['pass']) = \explode(':', $user_info, 2) + [1 => null];
         }
@@ -369,11 +368,11 @@ final class Parser
     /**
      * Validate the host component.
      *
-     * @param string|null $host
+     * @param null|string $host
      *
      * @throws Exception If the host is invalid
      *
-     * @return string|null
+     * @return null|string
      */
     private function filterHost($host)
     {
