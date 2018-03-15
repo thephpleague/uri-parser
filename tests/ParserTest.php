@@ -4,9 +4,16 @@ namespace LeagueTest\Uri\Parser;
 
 use League\Uri;
 use PHPUnit\Framework\TestCase;
+use TypeError;
 
 class ParserTest extends TestCase
 {
+    public function testParserFailedWithWrongArgumentType()
+    {
+        $this->expectException(TypeError::class);
+        Uri\parse(['scheme://user:pass@host:81/path?query#fragment']);
+    }
+
     /**
      * @dataProvider validUriProvider
      * @param string $uri
@@ -642,6 +649,37 @@ class ParserTest extends TestCase
                     'path' => '/http/en.m.wikipedia.org/wiki/The_Hitchhiker%27s_Guide_to_the_Galaxy',
                     'query' => null,
                     'fragment' => null,
+                ],
+            ],
+            'URI is a scalar value' => [
+                1234,
+                [
+                    'scheme' => null,
+                    'user' => null,
+                    'pass' => null,
+                    'host' => null,
+                    'port' => null,
+                    'path' => '1234',
+                    'query' => null,
+                    'fragment' => null,
+                ],
+            ],
+            'URI is a object with __toString' => [
+                new class() {
+                    public function __toString()
+                    {
+                        return 'http://example.org/hello:12?foo=bar#test';
+                    }
+                },
+                [
+                    'scheme' => 'http',
+                    'user' => null,
+                    'pass' => null,
+                    'host' => 'example.org',
+                    'port' => null,
+                    'path' => '/hello:12',
+                    'query' => 'foo=bar',
+                    'fragment' => 'test',
                 ],
             ],
         ];

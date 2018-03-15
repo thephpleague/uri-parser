@@ -1,6 +1,6 @@
 <?php
 /**
- * League.Uri (http://uri.thephpleague.com)
+ * League.Uri (http://uri.thephpleague.com).
  *
  * @package    League\Uri
  * @subpackage League\Uri\Parser
@@ -18,7 +18,7 @@ namespace League\Uri;
 
 /**
  * An exception thrown if the IDN support is missing or
- * the ICU is not at least version 4.6
+ * the ICU is not at least version 4.6.
  *
  * @see     https://tools.ietf.org/html/rfc3986
  * @package League\Uri

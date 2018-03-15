@@ -1,6 +1,6 @@
 <?php
 /**
- * League.Uri (http://uri.thephpleague.com)
+ * League.Uri (http://uri.thephpleague.com).
  *
  * @package    League\Uri
  * @subpackage League\Uri\Parser
@@ -15,6 +15,8 @@
 declare(strict_types=1);
 
 namespace League\Uri;
+
+use TypeError;
 
 /**
  * A class to parse a URI string according to RFC3986.
@@ -51,7 +53,7 @@ final class Parser
     }
 
     /**
-     * Validate a IPv6/IPvfuture host
+     * Validate a IPv6/IPvfuture host.
      *
      * @see http://tools.ietf.org/html/rfc3986#section-3.2.2
      * @see http://tools.ietf.org/html/rfc6874#section-2
@@ -106,7 +108,7 @@ final class Parser
 
 
     /**
-     * Returns whether the host is an IPv4 or a registered named
+     * Returns whether the host is an IPv4 or a registered named.
      *
      * @see http://tools.ietf.org/html/rfc3986#section-3.2.2
      *
@@ -157,13 +159,13 @@ final class Parser
      *
      * @see Parser::parse
      *
-     * @param string $uri
+     * @param mixed $uri
      *
      * @throws Exception if the URI contains invalid characters
      *
      * @return array
      */
-    public function __invoke(string $uri): array
+    public function __invoke($uri): array
     {
         return $this->parse($uri);
     }
@@ -205,14 +207,19 @@ final class Parser
      * @see https://tools.ietf.org/html/rfc3986
      * @see https://tools.ietf.org/html/rfc3986#section-2
      *
-     * @param string $uri
+     * @param mixed $uri
      *
      * @throws Exception if the URI contains invalid characters
      *
      * @return array
      */
-    public function parse(string $uri): array
+    public function parse($uri): array
     {
+        if (!\is_scalar($uri) && !\method_exists($uri, '__toString')) {
+            throw new TypeError(\sprintf('The uri must be a scalar or a stringable object `%s` given', \gettype($uri)));
+        }
+        $uri = (string) $uri;
+
         //simple URI which do not need any parsing
         static $simple_uri = [
             '' => [],
@@ -256,7 +263,7 @@ final class Parser
     }
 
     /**
-     * Parse the URI using the RFC3986 regular expression
+     * Parse the URI using the RFC3986 regular expression.
      *
      * @see https://tools.ietf.org/html/rfc3986
      * @see https://tools.ietf.org/html/rfc3986#section-2
@@ -297,7 +304,7 @@ final class Parser
     }
 
     /**
-     * Parse the Authority part of tha URI
+     * Parse the URI authority part.
      *
      * @param array $uri_parts
      *
@@ -329,7 +336,7 @@ final class Parser
     }
 
     /**
-     * Parse and validate the URI hostname.
+     * Parse the URI hostname.
      *
      * @param string $hostname
      *

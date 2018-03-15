@@ -1,6 +1,6 @@
 <?php
 /**
- * League.Uri (http://uri.thephpleague.com)
+ * League.Uri (http://uri.thephpleague.com).
  *
  * @package    League\Uri
  * @subpackage League\Uri\Parser
@@ -79,13 +79,13 @@ function is_scheme(string $scheme): bool
  * @see https://tools.ietf.org/html/rfc3986#section-2
  * @see Parser::parse()
  *
- * @param string $uri
+ * @param mixed $uri
  *
  * @throws Exception if the URI contains invalid characters
  *
  * @return array
  */
-function parse(string $uri): array
+function parse($uri): array
 {
     static $parser;
 
