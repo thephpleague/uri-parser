@@ -355,7 +355,9 @@ final class Parser
         if (null !== $user_info) {
             list($components['user'], $components['pass']) = explode(':', $user_info, 2) + [1 => null];
         }
-        list($components['host'], $components['port']) = $this->parseHostname($hostname);
+        list($host, $port) = $this->parseHostname($hostname);
+        $components['host'] = $this->filterHost($host);
+        $components['port'] = $this->filterPort($port);
 
         return $components;
     }
@@ -365,35 +367,38 @@ final class Parser
      *
      * @param string $hostname
      *
-     * @throws Exception If the hostname is invalid
+     * @throws Exception If the hostname is malformed
      *
      * @return array
      */
     private function parseHostname(string $hostname): array
     {
         if (false === strpos($hostname, '[')) {
-            list($host, $port) = explode(':', $hostname, 2) + [1 => null];
-
-            return [$this->filterHost($host), $this->filterPort($port)];
+            return explode(':', $hostname, 2) + [1 => null];
         }
 
-        $delimiter_offset = strpos($hostname, ']') + 1;
-        if (isset($hostname[$delimiter_offset]) && ':' !== $hostname[$delimiter_offset]) {
+        if (false === ($delimiter_offset = strpos($hostname, ']'))) {
             throw Exception::createFromInvalidHostname($hostname);
         }
 
-        return [
-            $this->filterHost(substr($hostname, 0, $delimiter_offset)),
-            $this->filterPort(substr($hostname, ++$delimiter_offset)),
-        ];
+        ++$delimiter_offset;
+        if (!isset($hostname[$delimiter_offset])) {
+            return [$hostname, null];
+        }
+
+        if (':' === $hostname[$delimiter_offset]) {
+            return [substr($hostname, 0, $delimiter_offset), substr($hostname, ++$delimiter_offset)];
+        }
+
+        throw Exception::createFromInvalidHostname($hostname);
     }
 
     /**
-     * validate the host component
+     * Validate the host component.
      *
      * @param string|null $host
      *
-     * @throws Exception If the hostname is invalid
+     * @throws Exception If the host is invalid
      *
      * @return string|null
      */
@@ -419,9 +424,7 @@ final class Parser
      */
     private function filterPort($port)
     {
-        static $pattern = '/^[0-9]+$/';
-
-        if (false === $port || null === $port || '' === $port) {
+        if (null === $port || '' === $port) {
             return null;
         }
 
