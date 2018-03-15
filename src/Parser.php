@@ -6,7 +6,7 @@
  * @subpackage League\Uri\Parser
  * @author     Ignace Nyamagana Butera <nyamsprod@gmail.com>
  * @license    https://github.com/thephpleague/uri-parser/blob/master/LICENSE (MIT License)
- * @version    1.4.0
+ * @version    2.0.0
  * @link       https://github.com/thephpleague/uri-parser/
  *
  * For the full copyright and license information, please view the LICENSE
@@ -24,30 +24,15 @@ namespace League\Uri;
  * @author  Ignace Nyamagana Butera <nyamsprod@gmail.com>
  * @since   0.1.0
  */
-class Parser
+final class Parser
 {
-    /** @deprecated 1.4.0 will be removed in the next major point release */
-    const INVALID_URI_CHARS = "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1A\x1B\x1C\x1D\x1E\x1F\x7F";
-
-    /** @deprecated 1.4.0 will be removed in the next major point release */
-    const SCHEME_VALID_STARTING_CHARS = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-
-    /** @deprecated 1.4.0 will be removed in the next major point release */
-    const SCHEME_VALID_CHARS = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+.-';
-
-    /** @deprecated 1.4.0 will be removed in the next major point release */
-    const LABEL_VALID_STARTING_CHARS = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-
-    /** @deprecated 1.4.0 will be removed in the next major point release */
-    const LOCAL_LINK_PREFIX = '1111111010';
-
+    /**
+     * @internal
+     */
     const URI_COMPONENTS = [
         'scheme' => null, 'user' => null, 'pass' => null, 'host' => null,
         'port' => null, 'path' => '', 'query' => null, 'fragment' => null,
     ];
-
-    /** @deprecated 1.4.0 will be removed in the next major point release */
-    const SUB_DELIMITERS = '!$&\'()*+,;=';
 
     /**
      * Returns whether a scheme is valid.
@@ -148,7 +133,7 @@ class Parser
      *
      * @return bool
      */
-    protected function isRegisteredName(string $host): bool
+    private function isRegisteredName(string $host): bool
     {
         // Note that unreserved is purposely missing . as it is used to separate labels.
         static $reg_name = '/(?(DEFINE)
@@ -194,13 +179,11 @@ class Parser
      */
     public function isPort($port): bool
     {
-        static $pattern = '/^[0-9]+$/';
-
         if (null === $port || '' === $port) {
             return true;
         }
 
-        return (bool) preg_match($pattern, (string) $port);
+        return false !== filter_var($port, FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
     }
 
     /**
@@ -264,8 +247,6 @@ class Parser
      */
     public function parse(string $uri): array
     {
-        static $pattern = '/[\x00-\x1f\x7f]/';
-
         //simple URI which do not need any parsing
         static $simple_uri = [
             '' => [],
@@ -280,6 +261,7 @@ class Parser
             return array_merge(self::URI_COMPONENTS, $simple_uri[$uri]);
         }
 
+        static $pattern = '/[\x00-\x1f\x7f]/';
         if (preg_match($pattern, $uri)) {
             throw Exception::createFromInvalidCharacters($uri);
         }
@@ -303,71 +285,73 @@ class Parser
             return $components;
         }
 
-        //The URI does not contain any scheme part
-        if (0 === strpos($uri, '//')) {
-            return $this->parseSchemeSpecificPart($uri);
-        }
-
-        //The URI is made of a path, query and fragment
-        if ('/' === $first_char || false === strpos($uri, ':')) {
-            return $this->parsePathQueryAndFragment($uri);
-        }
-
         //Fallback parser
         return $this->fallbackParser($uri);
     }
 
     /**
-     * Extract components from a URI without a scheme part.
+     * Parse the URI using the RFC3986 regular expression
      *
-     * The URI MUST start with the authority component
-     * preceded by its delimiter the double slash ('//')
-     *
-     * Example: //user:pass@host:42/path?query#fragment
-     *
-     * The authority MUST adhere to the RFC3986 requirements.
-     *
-     * If the URI contains a path component, it MUST be empty or absolute
-     * according to RFC3986 path classification.
-     *
-     * This method returns an associative array containing all URI components.
-     *
-     * @see https://tools.ietf.org/html/rfc3986#section-3.2
-     * @see https://tools.ietf.org/html/rfc3986#section-3.3
+     * @see https://tools.ietf.org/html/rfc3986
+     * @see https://tools.ietf.org/html/rfc3986#section-2
      *
      * @param string $uri
      *
-     * @throws Exception If any component of the URI is invalid
+     * @throws Exception if the URI contains an invalid scheme
      *
      * @return array
      */
-    protected function parseSchemeSpecificPart(string $uri): array
+    private function fallbackParser(string $uri): array
     {
-        //We remove the authority delimiter
-        $remaining_uri = (string) substr($uri, 2);
-        $components = self::URI_COMPONENTS;
+        static $uri_pattern = ',^
+            (?<scheme>(?<scontent>[^:/?\#]+):)?    # URI scheme component
+            (?<authority>//(?<acontent>[^/?\#]*))? # URI authority part
+            (?<path>[^?\#]*)                       # URI path component
+            (?<query>\?(?<qcontent>[^\#]*))?       # URI query component
+            (?<fragment>\#(?<fcontent>.*))?        # URI fragment component
+        ,x';
 
-        //Parsing is done from the right upmost part to the left
-        //1 - detect fragment, query and path part if any
-        list($remaining_uri, $components['fragment']) = explode('#', $remaining_uri, 2) + [1 => null];
-        list($remaining_uri, $components['query']) = explode('?', $remaining_uri, 2) + [1 => null];
-        if (false !== strpos($remaining_uri, '/')) {
-            list($remaining_uri, $components['path']) = explode('/', $remaining_uri, 2) + [1 => null];
-            $components['path'] = '/'.$components['path'];
+        preg_match($uri_pattern, $uri, $parts);
+        $parts += ['query' => '', 'fragment' => ''];
+
+        if (':' === $parts['scheme'] || !$this->isScheme($parts['scontent'])) {
+            throw Exception::createFromInvalidScheme($uri);
         }
 
-        //2 - The $remaining_uri represents the authority part
-        //if the authority part is empty parsing is simplified
-        if ('' === $remaining_uri) {
-            $components['host'] = '';
+        return array_merge(
+            self::URI_COMPONENTS,
+            $this->parseAuthority($parts),
+            [
+                'path' => $parts['path'],
+                'scheme' => '' === $parts['scheme'] ? null : $parts['scontent'],
+                'query' => '' === $parts['query'] ? null : $parts['qcontent'],
+                'fragment' => '' === $parts['fragment'] ? null : $parts['fcontent'],
+            ]
+        );
+    }
 
-            return $components;
+    /**
+     * Parse the Authority part of tha URI
+     *
+     * @param array $uri_parts
+     *
+     * @return array
+     */
+    private function parseAuthority(array $uri_parts): array
+    {
+        if ('' === $uri_parts['authority']) {
+            return [];
+        }
+
+        if ('' === $uri_parts['acontent']) {
+            return ['host' => ''];
         }
 
         //otherwise we split the authority into the user information and the hostname parts
-        $parts = explode('@', $remaining_uri, 2);
-        $hostname = $parts[1] ?? $parts[0];
-        $user_info = isset($parts[1]) ? $parts[0] : null;
+        $components = [];
+        $auth_parts = explode('@', $uri_parts['acontent'], 2);
+        $hostname = $auth_parts[1] ?? $auth_parts[0];
+        $user_info = isset($auth_parts[1]) ? $auth_parts[0] : null;
         if (null !== $user_info) {
             list($components['user'], $components['pass']) = explode(':', $user_info, 2) + [1 => null];
         }
@@ -385,7 +369,7 @@ class Parser
      *
      * @return array
      */
-    protected function parseHostname(string $hostname): array
+    private function parseHostname(string $hostname): array
     {
         if (false === strpos($hostname, '[')) {
             list($host, $port) = explode(':', $hostname, 2) + [1 => null];
@@ -413,7 +397,7 @@ class Parser
      *
      * @return string|null
      */
-    protected function filterHost($host)
+    private function filterHost($host)
     {
         if (null === $host || $this->isHost($host)) {
             return $host;
@@ -433,263 +417,18 @@ class Parser
      *
      * @return null|int
      */
-    protected function filterPort($port)
+    private function filterPort($port)
     {
         static $pattern = '/^[0-9]+$/';
 
-        if (null === $port || false === $port || '' === $port) {
+        if (false === $port || null === $port || '' === $port) {
             return null;
         }
 
-        if (!preg_match($pattern, (string) $port)) {
-            throw Exception::createFromInvalidPort($port);
+        if (false !== ($res = filter_var($port, FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]))) {
+            return $res;
         }
 
-        return (int) $port;
-    }
-
-
-    /**
-     * Extract Components from an URI without scheme or authority part.
-     *
-     * The URI contains a path component and MUST adhere to path requirements
-     * of RFC3986. The path can be
-     *
-     * <code>
-     * path   = path-abempty    ; begins with "/" or is empty
-     *        / path-absolute   ; begins with "/" but not "//"
-     *        / path-noscheme   ; begins with a non-colon segment
-     *        / path-rootless   ; begins with a segment
-     *        / path-empty      ; zero characters
-     * </code>
-     *
-     * ex: path?q#f
-     * ex: /path
-     * ex: /pa:th#f
-     *
-     * This method returns an associative array containing all URI components.
-     *
-     * @see https://tools.ietf.org/html/rfc3986#section-3.3
-     *
-     * @param string $uri
-     *
-     * @throws Exception If the path component is invalid
-     *
-     * @return array
-     */
-    protected function parsePathQueryAndFragment(string $uri): array
-    {
-        //No scheme is present so we ensure that the path respects RFC3986
-        if (false !== ($pos = strpos($uri, ':')) && false === strpos(substr($uri, 0, $pos), '/')) {
-            throw Exception::createFromInvalidPath($uri);
-        }
-
-        $components = self::URI_COMPONENTS;
-
-        //Parsing is done from the right upmost part to the left
-        //1 - detect the fragment part if any
-        list($remaining_uri, $components['fragment']) = explode('#', $uri, 2) + [1 => null];
-
-        //2 - detect the query and the path part
-        list($components['path'], $components['query']) = explode('?', $remaining_uri, 2) + [1 => null];
-
-        return $components;
-    }
-
-    /**
-     * Extract components from an URI containing a colon.
-     *
-     * Depending on the colon ":" position and on the string
-     * composition before the presence of the colon, the URI
-     * will be considered to have an scheme or not.
-     *
-     * <ul>
-     * <li>In case no valid scheme is found according to RFC3986 the URI will
-     * be parsed as an URI without a scheme and an authority</li>
-     * <li>In case an authority part is detected the URI specific part is parsed
-     * as an URI without scheme</li>
-     * </ul>
-     *
-     * ex: email:johndoe@thephpleague.com?subject=Hellow%20World!
-     *
-     * This method returns an associative array containing all
-     * the URI components.
-     *
-     * @see https://tools.ietf.org/html/rfc3986#section-3.1
-     * @see Parser::parsePathQueryAndFragment
-     * @see Parser::parseSchemeSpecificPart
-     *
-     * @param string $uri
-     *
-     * @throws Exception If the URI scheme component is empty
-     *
-     * @return array
-     */
-    protected function fallbackParser(string $uri): array
-    {
-        //1 - we split the URI on the first detected colon character
-        $parts = explode(':', $uri, 2);
-        $remaining_uri = $parts[1] ?? $parts[0];
-        $scheme = isset($parts[1]) ? $parts[0] : null;
-
-        //1.1 - a scheme can not be empty (ie a URI can not start with a colon)
-        if ('' === $scheme) {
-            throw Exception::createFromInvalidScheme($uri);
-        }
-
-        //2 - depending on the scheme presence and validity we will differ the parsing
-
-        //2.1 - If the scheme part is invalid the URI may be an URI with a path-noscheme
-        //      let's differ the parsing to the Parser::parsePathQueryAndFragment method
-        if (!$this->isScheme($scheme)) {
-            return $this->parsePathQueryAndFragment($uri);
-        }
-
-        $components = self::URI_COMPONENTS;
-        $components['scheme'] = $scheme;
-
-        //2.2 - if no scheme specific part is detect parsing is finished
-        if ('' == $remaining_uri) {
-            return $components;
-        }
-
-        //2.3 - if the scheme specific part is a double forward slash
-        if ('//' === $remaining_uri) {
-            $components['host'] = '';
-
-            return $components;
-        }
-
-        //2.4 - if the scheme specific part starts with double forward slash
-        //      we differ the remaining parsing to the Parser::parseSchemeSpecificPart method
-        if (0 === strpos($remaining_uri, '//')) {
-            $components = $this->parseSchemeSpecificPart($remaining_uri);
-            $components['scheme'] = $scheme;
-
-            return $components;
-        }
-
-        //2.5 - Parsing is done from the right upmost part to the left from the scheme specific part
-        //2.5.1 - detect the fragment part if any
-        list($remaining_uri, $components['fragment']) = explode('#', $remaining_uri, 2) + [1 => null];
-
-        //2.5.2 - detect the part and query part if any
-        list($components['path'], $components['query']) = explode('?', $remaining_uri, 2) + [1 => null];
-
-        return $components;
-    }
-
-    /**
-     * Convert a registered name label to its IDNA ASCII form.
-     *
-     * DEPRECATION WARNING! This method will be removed in the next major point release
-     *
-     * @deprecated 1.4.0 this method is no longer used to validate RFC3987 compliant host component
-     * @codeCoverageIgnore
-     *
-     * Conversion is done only if the label contains none valid label characters
-     * if a '%' sub delimiter is detected the label MUST be rawurldecode prior to
-     * making the conversion
-     *
-     * @param string $label
-     *
-     * @return string|false
-     */
-    protected function toAscii(string $label)
-    {
-        trigger_error(
-            self::class.'::'.__METHOD__.' is deprecated and will be removed in the next major point release',
-            E_USER_DEPRECATED
-        );
-
-        if (false !== strpos($label, '%')) {
-            $label = rawurldecode($label);
-        }
-
-        static $idn_support = null;
-        $idn_support = $idn_support ?? function_exists('idn_to_ascii') && defined('INTL_IDNA_VARIANT_UTS46');
-        if ($idn_support) {
-            return idn_to_ascii($label, IDNA_NONTRANSITIONAL_TO_ASCII, INTL_IDNA_VARIANT_UTS46);
-        }
-
-        throw new MissingIdnSupport(sprintf('the label `%s` could not be processed for IDN. Verify that ext/intl is installed for IDN support and that ICU is at least version 4.6.', $label));
-    }
-
-    /**
-     * Returns whether the registered name label is valid.
-     *
-     * DEPRECATION WARNING! This method will be removed in the next major point release
-     *
-     * @deprecated 1.4.0 this method is no longer used to validated the host component
-     * @codeCoverageIgnore
-     *
-     * A valid registered name label MUST conform to the following ABNF
-     *
-     * reg-name = *( unreserved / pct-encoded / sub-delims )
-     *
-     * @see https://tools.ietf.org/html/rfc3986#section-3.2.2
-     *
-     * @param string $label
-     *
-     * @return bool
-     */
-    protected function isHostLabel($label): bool
-    {
-        trigger_error(
-            self::class.'::'.__METHOD__.' is deprecated and will be removed in the next major point release',
-            E_USER_DEPRECATED
-        );
-
-        return '' != $label
-            && 63 >= strlen($label)
-            && strlen($label) == strspn($label, self::LABEL_VALID_STARTING_CHARS.'-_~'.self::SUB_DELIMITERS);
-    }
-
-    /**
-     * Validate an IPv6 host.
-     *
-     * DEPRECATION WARNING! This method will be removed in the next major point release
-     *
-     * @deprecated 1.4.0 this method is no longer used to validated the host component
-     * @codeCoverageIgnore
-     *
-     * @see http://tools.ietf.org/html/rfc6874#section-2
-     * @see http://tools.ietf.org/html/rfc6874#section-4
-     *
-     * @param string $ipv6
-     *
-     * @return bool
-     */
-    protected function isIpv6Host(string $ipv6): bool
-    {
-        trigger_error(
-            self::class.'::'.__METHOD__.' is deprecated and will be removed in the next major point release',
-            E_USER_DEPRECATED
-        );
-
-        if ('[' !== ($ipv6[0] ?? '') || ']' !== substr($ipv6, -1)) {
-            return false;
-        }
-
-        $ipv6 = substr($ipv6, 1, -1);
-        if (false === ($pos = strpos($ipv6, '%'))) {
-            return (bool) filter_var($ipv6, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6);
-        }
-
-        $scope = rawurldecode(substr($ipv6, $pos));
-        if (strlen($scope) !== strcspn($scope, '?#@[]')) {
-            return false;
-        }
-
-        $ipv6 = substr($ipv6, 0, $pos);
-        if (!filter_var($ipv6, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
-            return false;
-        }
-
-        //Only the address block fe80::/10 can have a Zone ID attach to
-        //let's detect the link local significant 10 bits
-        static $address_block = "\xfe\x80";
-
-        return substr(inet_pton($ipv6) & $address_block, 0, 2) === $address_block;
+        throw Exception::createFromInvalidPort($port);
     }
 }
