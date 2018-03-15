@@ -263,7 +263,7 @@ final class Parser
 
         static $pattern = '/[\x00-\x1f\x7f]/';
         if (preg_match($pattern, $uri)) {
-            throw Exception::createFromInvalidCharacters($uri);
+            throw new Exception(sprintf('The uri `%s` contains invalid characters', $uri));
         }
 
         //if the first character is a known URI delimiter parsing can be simplified
@@ -315,7 +315,7 @@ final class Parser
         $parts += ['query' => '', 'fragment' => ''];
 
         if (':' === $parts['scheme'] || !$this->isScheme($parts['scontent'])) {
-            throw Exception::createFromInvalidScheme($uri);
+            throw new Exception(sprintf('The submitted uri `%s` contains an invalid scheme', $uri));
         }
 
         return array_merge(
@@ -378,7 +378,7 @@ final class Parser
         }
 
         if (false === ($delimiter_offset = strpos($hostname, ']'))) {
-            throw Exception::createFromInvalidHostname($hostname);
+            throw new Exception(sprintf('The hostname `%s` is invalid', $hostname));
         }
 
         ++$delimiter_offset;
@@ -390,7 +390,7 @@ final class Parser
             return [substr($hostname, 0, $delimiter_offset), substr($hostname, ++$delimiter_offset)];
         }
 
-        throw Exception::createFromInvalidHostname($hostname);
+        throw new Exception(sprintf('The hostname `%s` is invalid', $hostname));
     }
 
     /**
@@ -408,7 +408,7 @@ final class Parser
             return $host;
         }
 
-        throw Exception::createFromInvalidHost($host);
+        throw new Exception(sprintf('The host `%s` is invalid', $host));
     }
 
     /**
@@ -432,6 +432,6 @@ final class Parser
             return $res;
         }
 
-        throw Exception::createFromInvalidPort($port);
+        throw new Exception(sprintf('The submitted port `%s` is invalid', $port));
     }
 }
