@@ -17,59 +17,6 @@ declare(strict_types=1);
 namespace League\Uri;
 
 /**
- * Returns whether the URI host component is valid according to RFC3986.
- *
- * @see https://tools.ietf.org/html/rfc3986#section-3.2.2
- * @see Parser::isHost()
- *
- * @param string $host
- *
- * @return bool
- */
-function is_host(string $host): bool
-{
-    static $parser;
-
-    $parser = $parser ?? new Parser();
-
-    return $parser->isHost($host);
-}
-
-/**
- * Returns whether the URI port component is valid according to RFC3986.
- *
- * @see https://tools.ietf.org/html/rfc3986#section-3.2.3
- *
- * @param mixed $port
- *
- * @return bool
- */
-function is_port($port): bool
-{
-    if (null === $port || '' === $port) {
-        return true;
-    }
-
-    return false !== \filter_var($port, \FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
-}
-
-/**
- * Returns whether the URI scheme component is valid according to RFC3986.
- *
- * @see https://tools.ietf.org/html/rfc3986#section-3.1
- *
- * @param string $scheme
- *
- * @return bool
- */
-function is_scheme(string $scheme): bool
-{
-    static $pattern = '/^[a-z][a-z\+\.\-]*$/i';
-
-    return '' === $scheme || \preg_match($pattern, $scheme);
-}
-
-/**
  * Parse an URI string into its components.
  *
  * This method parses a URL and returns an associative array containing any
@@ -140,4 +87,57 @@ function build(array $components): string
     }
 
     return $uri;
+}
+
+/**
+ * Returns whether the URI scheme component is valid according to RFC3986.
+ *
+ * @see https://tools.ietf.org/html/rfc3986#section-3.1
+ *
+ * @param string $scheme
+ *
+ * @return bool
+ */
+function is_scheme(string $scheme): bool
+{
+    static $pattern = '/^[a-z][a-z\+\.\-]*$/i';
+
+    return '' === $scheme || \preg_match($pattern, $scheme);
+}
+
+/**
+ * Returns whether the URI host component is valid according to RFC3986.
+ *
+ * @see https://tools.ietf.org/html/rfc3986#section-3.2.2
+ * @see Parser::isHost()
+ *
+ * @param string $host
+ *
+ * @return bool
+ */
+function is_host(string $host): bool
+{
+    static $parser;
+
+    $parser = $parser ?? new Parser();
+
+    return $parser->isHost($host);
+}
+
+/**
+ * Returns whether the URI port component is valid according to RFC3986.
+ *
+ * @see https://tools.ietf.org/html/rfc3986#section-3.2.3
+ *
+ * @param mixed $port
+ *
+ * @return bool
+ */
+function is_port($port): bool
+{
+    if (null === $port || '' === $port) {
+        return true;
+    }
+
+    return false !== \filter_var($port, \FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
 }

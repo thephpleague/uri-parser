@@ -216,7 +216,10 @@ final class Parser
         if (!\is_scalar($uri) && !\method_exists($uri, '__toString')) {
             throw new TypeError(\sprintf('The uri must be a scalar or a stringable object `%s` given', \gettype($uri)));
         }
-        $uri = (string) $uri;
+
+        if (!\is_string($uri)) {
+            $uri = (string) $uri;
+        }
 
         //simple URI which do not need any parsing
         static $simple_uri = [
@@ -286,7 +289,8 @@ final class Parser
         \preg_match($uri_pattern, $uri, $parts);
         $parts += ['query' => '', 'fragment' => ''];
 
-        if (':' === $parts['scheme'] || !is_scheme($parts['scontent'])) {
+        static $scheme_pattern = '/^[a-z][a-z\+\.\-]*$/i';
+        if (':' === $parts['scheme'] || ('' !== $parts['scontent'] && !\preg_match($scheme_pattern, $parts['scontent']))) {
             throw new Exception(\sprintf('The submitted uri `%s` contains an invalid scheme', $uri));
         }
 
@@ -359,12 +363,14 @@ final class Parser
         }
 
         ++$delimiter_offset;
-        if (!isset($hostname[$delimiter_offset])) {
-            return [$hostname, ''];
+        $host = \substr($hostname, 0, $delimiter_offset);
+        $port = \substr($hostname, $delimiter_offset);
+        if ('' === $port) {
+            return [$host, $port];
         }
 
-        if (':' === $hostname[$delimiter_offset]) {
-            return [\substr($hostname, 0, $delimiter_offset), \substr($hostname, ++$delimiter_offset)];
+        if (':' === $port[0]) {
+            return [$host, \substr($port, 1)];
         }
 
         throw new Exception(\sprintf('The hostname `%s` is invalid', $hostname));
