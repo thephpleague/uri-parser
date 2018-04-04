@@ -698,8 +698,8 @@ class ParserTest extends TestCase
     public function invalidUriProvider()
     {
         return [
-            'invalid scheme (1)' => ['0scheme://host/path?query#fragment'],
-            //'invalid scheme (2)' => ['://host:80/p?q#f'],
+            'invalid scheme' => ['0scheme://host/path?query#fragment'],
+            'invalid path' => ['://host:80/p?q#f'],
             'invalid port (1)' => ['//host:port/path?query#fragment'],
             'invalid port (2)' => ['//host:-892358/path?query#fragment'],
             'invalid ipv6 host (1)' => ['scheme://[127.0.0.1]/path?query#fragment'],
@@ -809,9 +809,7 @@ class ParserTest extends TestCase
      */
     public function testBuild($uri, $expected)
     {
-        $uri = (new Uri\Parser())($uri);
-
-        $this->assertSame($expected, Uri\build($uri));
+        $this->assertSame($expected, Uri\build(Uri\parse($uri)));
     }
 
     public function buildUriProvider()

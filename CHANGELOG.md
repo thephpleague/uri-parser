@@ -2,6 +2,32 @@
 
 All Notable changes to `league-uri-parser` will be documented in this file
 
+### Added
+
+- None
+
+### Fixed
+
+- Improve Parsing performance
+- The `League\Uri\Parser` is now internal you must use the function instead.
+
+### Deprecated
+
+- None
+
+### Removed
+
+- `Parser::__invoke` magic method
+- `Parser::INVALID_URI_CHARS` internal constants no longer in use
+- `Parser::CHEME_VALID_STARTING_CHARS` internal constants no longer in use
+- `Parser::SCHEME_VALID_CHARS` internal constants no longer in use
+- `Parser::LABEL_VALID_STARTING_CHARS` internal constants no longer in use
+- `Parser::LOCAL_LINK_PREFIX` internal constants no longer in use
+- `Parser::UB_DELIMITERS` internal constants no longer in use
+- `Parser::isIpv6host` internal method no longer in use
+- `Parser::isHostLabel` internal method no longer in use
+- `Parser::toAscii` internal method no longer in use
+
 ## 1.4.0 - 2018-03-14
 
 ### Added

@@ -21,6 +21,8 @@ use TypeError;
 /**
  * A class to parse a URI string according to RFC3986.
  *
+ * @internal use the functions League\Uri\parse and League\Uri\is_host instead
+ *
  * @see     https://tools.ietf.org/html/rfc3986
  * @package League\Uri
  * @author  Ignace Nyamagana Butera <nyamsprod@gmail.com>
@@ -29,7 +31,7 @@ use TypeError;
 final class Parser
 {
     /**
-     * @internal
+     * @internal default URI component values
      */
     const URI_COMPONENTS = [
         'scheme' => null, 'user' => null, 'pass' => null, 'host' => null,
@@ -37,136 +39,79 @@ final class Parser
     ];
 
     /**
-     * Returns whether a hostname is valid.
-     *
-     * @see https://tools.ietf.org/html/rfc3986#section-3.2.2
-     *
-     * @param string $host
-     *
-     * @return bool
+     * @internal simple URI which do not need any parsing
      */
-    public function isHost(string $host): bool
-    {
-        return $this->isIpHost($host) || $this->isRegisteredName($host);
-    }
+    const URI_SCHORTCUTS = [
+        '' => [],
+        '#' => ['fragment' => ''],
+        '?' => ['query' => ''],
+        '?#' => ['query' => '', 'fragment' => ''],
+        '/' => ['path' => '/'],
+        '//' => ['host' => ''],
+    ];
 
     /**
-     * Validate a IPv6/IPvfuture host.
-     *
-     * @see http://tools.ietf.org/html/rfc3986#section-3.2.2
-     * @see http://tools.ietf.org/html/rfc6874#section-2
-     * @see http://tools.ietf.org/html/rfc6874#section-4
-     *
-     * @param string $host
-     *
-     * @return bool
+     * @internal
      */
-    private function isIpHost(string $host): bool
-    {
-        if ('[' !== ($host[0] ?? '') || ']' !== \substr($host, -1)) {
-            return false;
-        }
-
-        $ip = \substr($host, 1, -1);
-        if (\filter_var($ip, \FILTER_VALIDATE_IP, \FILTER_FLAG_IPV6)) {
-            return true;
-        }
-
-        static $ip_future = '/^
-            v(?<version>[A-F0-9])+\.
-            (?:
-                (?<unreserved>[a-z0-9_~\-\.])|
-                (?<sub_delims>[!$&\'()*+,;=:])  # also include the : character
-            )+
-        $/ix';
-        if (\preg_match($ip_future, $ip, $matches) && !\in_array($matches['version'], ['4', '6'], true)) {
-            return true;
-        }
-
-        if (false === ($pos = \strpos($ip, '%'))) {
-            return false;
-        }
-
-        static $gen_delims = '/[:\/?#\[\]@ ]/'; // Also includes space.
-        if (\preg_match($gen_delims, \rawurldecode(\substr($ip, $pos)))) {
-            return false;
-        }
-
-        $ip = \substr($ip, 0, $pos);
-        if (!\filter_var($ip, \FILTER_VALIDATE_IP, \FILTER_FLAG_IPV6)) {
-            return false;
-        }
-
-        //Only the address block fe80::/10 can have a Zone ID attach to
-        //let's detect the link local significant 10 bits
-        static $address_block = "\xfe\x80";
-
-        return \substr(\inet_pton($ip) & $address_block, 0, 2) === $address_block;
-    }
-
+    const REGEXP_INVALID_URI_CHARS = '/[\x00-\x1f\x7f]/';
 
     /**
-     * Returns whether the host is an IPv4 or a registered named.
-     *
-     * @see http://tools.ietf.org/html/rfc3986#section-3.2.2
-     *
-     * @param string $host
-     *
-     * @throws MissingIdnSupport if the registered name contains non-ASCII characters
-     *                           and IDN support or ICU requirement are not available or met.
-     *
-     * @return bool
+     * @internal RFC3986 regular expression URI splitter
      */
-    private function isRegisteredName(string $host): bool
-    {
-        // Note that unreserved is purposely missing . as it is used to separate labels.
-        static $reg_name = '/(?(DEFINE)
-                (?<unreserved>[a-z0-9_~\-])
-                (?<sub_delims>[!$&\'()*+,;=])
-                (?<encoded>%[A-F0-9]{2})
-                (?<reg_name>(?:(?&unreserved)|(?&sub_delims)|(?&encoded))*)
-            )
-            ^(?:(?&reg_name)\.)*(?&reg_name)\.?$/ix';
-        if (\preg_match($reg_name, $host)) {
-            return true;
-        }
-
-        //to test IDN host non-ascii characters must be present in the host
-        static $idn_pattern = '/[^\x20-\x7f]/';
-        if (!\preg_match($idn_pattern, $host)) {
-            return false;
-        }
-
-        static $idn_support = null;
-        $idn_support = $idn_support ?? \function_exists('\idn_to_ascii') && \defined('\INTL_IDNA_VARIANT_UTS46');
-        if ($idn_support) {
-            \idn_to_ascii($host, \IDNA_NONTRANSITIONAL_TO_ASCII, \INTL_IDNA_VARIANT_UTS46, $arr);
-
-            return 0 === $arr['errors'];
-        }
-
-        // @codeCoverageIgnoreStart
-        // added because it is not possible in travis to disabled the ext/intl extension
-        // see travis issue https://github.com/travis-ci/travis-ci/issues/4701
-        throw new MissingIdnSupport(\sprintf('the host `%s` could not be processed for IDN. Verify that ext/intl is installed for IDN support and that ICU is at least version 4.6.', $host));
-        // @codeCoverageIgnoreEnd
-    }
+    const REGEXP_URI_PARTS = ',^
+        (?<scheme>(?<scontent>[^:/?\#]+):)?    # URI scheme component
+        (?<authority>//(?<acontent>[^/?\#]*))? # URI authority part
+        (?<path>[^?\#]*)                       # URI path component
+        (?<query>\?(?<qcontent>[^\#]*))?       # URI query component
+        (?<fragment>\#(?<fcontent>.*))?        # URI fragment component
+    ,x';
 
     /**
-     * Parse a URI string into its components.
-     *
-     * @see Parser::parse
-     *
-     * @param mixed $uri
-     *
-     * @throws Exception if the URI contains invalid characters
-     *
-     * @return array
+     * @internal
      */
-    public function __invoke($uri): array
-    {
-        return $this->parse($uri);
-    }
+    const REGEXP_URI_SCHEME = '/^[a-z][a-z\+\.\-]*$/i';
+
+    /**
+     * @internal
+     */
+    const REGEXP_IP_FUTURE = '/^
+        v(?<version>[A-F0-9])+\.
+        (?:
+            (?<unreserved>[a-z0-9_~\-\.])|
+            (?<sub_delims>[!$&\'()*+,;=:])  # also include the : character
+        )+
+    $/ix';
+
+    /**
+     * @internal
+     */
+    const REGEXP_REGISTERED_NAME = '/(?(DEFINE)
+        (?<unreserved>[a-z0-9_~\-])   # . is missing as it is used to separate labels
+        (?<sub_delims>[!$&\'()*+,;=])
+        (?<encoded>%[A-F0-9]{2})
+        (?<reg_name>(?:(?&unreserved)|(?&sub_delims)|(?&encoded))*)
+    )
+    ^(?:(?&reg_name)\.)*(?&reg_name)\.?$/ix';
+
+    /**
+     * @internal
+     */
+    const REGEXP_INVALID_HOST_CHARS = '/
+        [:\/?#\[\]@ ]  # gen-delims characters as well as the space character
+    /ix';
+
+    /**
+     * @internal
+     */
+    const REGEXP_IDN_PATTERN = '/[^\x20-\x7f]/';
+
+    /**
+     * @internal
+     *
+     * Only the address block fe80::/10 can have a Zone ID attach to
+     * let's detect the link local significant 10 bits
+     */
+    const ZONE_ID_ADDRESS_BLOCK = "\xfe\x80";
 
     /**
      * Parse an URI string into its components.
@@ -217,26 +162,13 @@ final class Parser
             throw new TypeError(\sprintf('The uri must be a scalar or a stringable object `%s` given', \gettype($uri)));
         }
 
-        if (!\is_string($uri)) {
-            $uri = (string) $uri;
+        $uri = (string) $uri;
+
+        if (isset(self::URI_SCHORTCUTS[$uri])) {
+            return \array_merge(self::URI_COMPONENTS, self::URI_SCHORTCUTS[$uri]);
         }
 
-        //simple URI which do not need any parsing
-        static $simple_uri = [
-            '' => [],
-            '#' => ['fragment' => ''],
-            '?' => ['query' => ''],
-            '?#' => ['query' => '', 'fragment' => ''],
-            '/' => ['path' => '/'],
-            '//' => ['host' => ''],
-        ];
-
-        if (isset($simple_uri[$uri])) {
-            return \array_merge(self::URI_COMPONENTS, $simple_uri[$uri]);
-        }
-
-        static $pattern = '/[\x00-\x1f\x7f]/';
-        if (\preg_match($pattern, $uri)) {
+        if (\preg_match(self::REGEXP_INVALID_URI_CHARS, $uri)) {
             throw new Exception(\sprintf('The uri `%s` contains invalid characters', $uri));
         }
 
@@ -260,43 +192,45 @@ final class Parser
             return $components;
         }
 
-        //Fallback parser
-        return $this->fallbackParser($uri);
+        return $this->split($uri);
     }
 
     /**
-     * Parse the URI using the RFC3986 regular expression.
+     * Split an URI using the RFC3986 rules and return its components.
      *
-     * @see https://tools.ietf.org/html/rfc3986
-     * @see https://tools.ietf.org/html/rfc3986#section-2
+     * @see https://tools.ietf.org/html/rfc3986#section-3
+     * @see https://tools.ietf.org/html/rfc3986#appendix-B
      *
      * @param string $uri
      *
      * @throws Exception if the URI contains an invalid scheme
+     * @throws Exception if the URI contains an invalid path
      *
      * @return array
      */
-    private function fallbackParser(string $uri): array
+    private function split(string $uri): array
     {
-        static $uri_pattern = ',^
-            (?<scheme>(?<scontent>[^:/?\#]+):)?    # URI scheme component
-            (?<authority>//(?<acontent>[^/?\#]*))? # URI authority part
-            (?<path>[^?\#]*)                       # URI path component
-            (?<query>\?(?<qcontent>[^\#]*))?       # URI query component
-            (?<fragment>\#(?<fcontent>.*))?        # URI fragment component
-        ,x';
-
-        \preg_match($uri_pattern, $uri, $parts);
+        \preg_match(self::REGEXP_URI_PARTS, $uri, $parts);
         $parts += ['query' => '', 'fragment' => ''];
 
-        static $scheme_pattern = '/^[a-z][a-z\+\.\-]*$/i';
-        if (':' === $parts['scheme'] || ('' !== $parts['scontent'] && !\preg_match($scheme_pattern, $parts['scontent']))) {
-            throw new Exception(\sprintf('The submitted uri `%s` contains an invalid scheme', $uri));
+        if (
+            ':' === $parts['scheme']
+            || ('' !== $parts['scontent'] && !\preg_match(self::REGEXP_URI_SCHEME, $parts['scontent']))
+        ) {
+            throw new Exception(\sprintf('The uri `%s` contains an invalid scheme', $uri));
+        }
+
+        if (
+            '' === $parts['scheme'].$parts['authority']
+            && false !== ($pos = \strpos($parts['path'], ':'))
+            && false === \strpos(\substr($parts['path'], 0, $pos), '/')
+        ) {
+            throw new Exception(\sprintf('The uri `%s` contains an invalid path', $uri));
         }
 
         return \array_merge(
             self::URI_COMPONENTS,
-            $this->parseAuthority('' === $parts['authority'] ? null : $parts['acontent']),
+            '' === $parts['authority'] ? [] : $this->parseAuthority($parts['acontent']),
             [
                 'path' => $parts['path'],
                 'scheme' => '' === $parts['scheme'] ? null : $parts['scontent'],
@@ -309,62 +243,63 @@ final class Parser
     /**
      * Parse the URI authority part.
      *
-     * @param null|string $authority
+     * @see https://tools.ietf.org/html/rfc3986#section-3.2
+     *
+     * @param string $authority
      *
      * @throws Exception If the host is invalid
      *
      * @return array
      */
-    private function parseAuthority(string $authority = null): array
+    private function parseAuthority(string $authority): array
     {
-        if (null === $authority) {
-            return [];
-        }
-
         if ('' === $authority) {
             return ['host' => ''];
         }
 
         $parts = \explode('@', $authority, 2);
-        $hostname = $parts[1] ?? $parts[0];
+        $hostport = $parts[1] ?? $parts[0];
         $user_info = isset($parts[1]) ? $parts[0] : null;
         $components = [];
         if (null !== $user_info) {
             list($components['user'], $components['pass']) = \explode(':', $user_info, 2) + [1 => null];
         }
-        list($host, $port) = $this->parseHostname($hostname);
-        if (!$this->isHost($host)) {
-            throw new Exception(\sprintf('The host `%s` is invalid', $host));
+
+        list($host, $port) = $this->parseHostPort($hostport);
+        $components['port'] = $this->filterPort($port);
+        if ($this->isHost($host)) {
+            $components['host'] = $host;
+
+            return $components;
         }
 
-        $components['host'] = $host;
-        $components['port'] = $this->filterPort($port);
-
-        return $components;
+        throw new Exception(\sprintf('The host `%s` is invalid', $host));
     }
 
     /**
-     * Parse the URI hostname.
+     * Parse the URI host and port.
      *
-     * @param string $hostname
+     * The hostport contains the host and optionally the port.
      *
-     * @throws Exception If the hostname is malformed
+     * @param string $hostport
+     *
+     * @throws Exception If the URI part is invalid
      *
      * @return array
      */
-    private function parseHostname(string $hostname): array
+    private function parseHostPort(string $hostport): array
     {
-        if (false === ($pos = \strpos($hostname, '['))) {
-            return \explode(':', $hostname, 2) + [1 => ''];
+        if (false === ($pos = \strpos($hostport, '['))) {
+            return \explode(':', $hostport, 2) + [1 => ''];
         }
 
-        if (0 !== $pos || false === ($delimiter_offset = \strpos($hostname, ']'))) {
-            throw new Exception(\sprintf('The hostname `%s` is invalid', $hostname));
+        if (0 !== $pos || false === ($delimiter_offset = \strpos($hostport, ']'))) {
+            throw new Exception(\sprintf('The URI part `%s` is invalid', $hostport));
         }
 
         ++$delimiter_offset;
-        $host = \substr($hostname, 0, $delimiter_offset);
-        $port = \substr($hostname, $delimiter_offset);
+        $host = \substr($hostport, 0, $delimiter_offset);
+        $port = \substr($hostport, $delimiter_offset);
         if ('' === $port) {
             return [$host, $port];
         }
@@ -373,13 +308,15 @@ final class Parser
             return [$host, \substr($port, 1)];
         }
 
-        throw new Exception(\sprintf('The hostname `%s` is invalid', $hostname));
+        throw new Exception(\sprintf('The URI part `%s` is invalid', $hostport));
     }
 
     /**
      * Validate a port number.
      *
      * An exception is raised for ports outside the established TCP and UDP port ranges.
+     *
+     * @see https://tools.ietf.org/html/rfc3986#section-3.2.3
      *
      * @param string $port the port number
      *
@@ -398,5 +335,99 @@ final class Parser
         }
 
         throw new Exception(\sprintf('The submitted port `%s` is invalid', $port));
+    }
+
+    /**
+     * Returns whether a hostname is valid.
+     *
+     * @see https://tools.ietf.org/html/rfc3986#section-3.2.2
+     *
+     * @param string $host
+     *
+     * @return bool
+     */
+    public function isHost(string $host): bool
+    {
+        return $this->isIpHost($host) || $this->isRegisteredName($host);
+    }
+
+    /**
+     * Validate a IPv6/IPvfuture host.
+     *
+     * @see http://tools.ietf.org/html/rfc3986#section-3.2.2
+     * @see http://tools.ietf.org/html/rfc6874#section-2
+     * @see http://tools.ietf.org/html/rfc6874#section-4
+     *
+     * @param string $host
+     *
+     * @return bool
+     */
+    private function isIpHost(string $host): bool
+    {
+        if ('[' !== ($host[0] ?? '') || ']' !== \substr($host, -1)) {
+            return false;
+        }
+
+        $ip = \substr($host, 1, -1);
+        if (\filter_var($ip, \FILTER_VALIDATE_IP, \FILTER_FLAG_IPV6)) {
+            return true;
+        }
+
+        if (\preg_match(self::REGEXP_IP_FUTURE, $ip, $matches) && !\in_array($matches['version'], ['4', '6'], true)) {
+            return true;
+        }
+
+        if (false === ($pos = \strpos($ip, '%'))) {
+            return false;
+        }
+
+        if (\preg_match(self::REGEXP_INVALID_HOST_CHARS, \rawurldecode(\substr($ip, $pos)))) {
+            return false;
+        }
+
+        $ip = \substr($ip, 0, $pos);
+        if (!\filter_var($ip, \FILTER_VALIDATE_IP, \FILTER_FLAG_IPV6)) {
+            return false;
+        }
+
+        return \substr(\inet_pton($ip) & self::ZONE_ID_ADDRESS_BLOCK, 0, 2) === self::ZONE_ID_ADDRESS_BLOCK;
+    }
+
+    /**
+     * Returns whether the host is an IPv4 or a registered named.
+     *
+     * @see http://tools.ietf.org/html/rfc3986#section-3.2.2
+     *
+     * @param string $host
+     *
+     * @throws MissingIdnSupport if the registered name contains non-ASCII characters
+     *                           and IDN support or ICU requirement are not available or met.
+     *
+     * @return bool
+     */
+    private function isRegisteredName(string $host): bool
+    {
+        if (\preg_match(self::REGEXP_REGISTERED_NAME, $host)) {
+            return true;
+        }
+
+        //to test IDN host non-ascii characters must be present in the host
+        if (!\preg_match(self::REGEXP_IDN_PATTERN, $host)) {
+            return false;
+        }
+
+        static $idn_support = null;
+        $idn_support = $idn_support ?? \function_exists('\idn_to_ascii') && \defined('\INTL_IDNA_VARIANT_UTS46');
+        if ($idn_support) {
+            \idn_to_ascii($host, \IDNA_NONTRANSITIONAL_TO_ASCII, \INTL_IDNA_VARIANT_UTS46, $arr);
+
+            return 0 === $arr['errors'];
+        }
+
+        // @codeCoverageIgnoreStart
+        // added because it is not possible in travis to disabled the ext/intl extension
+        // see travis issue https://github.com/travis-ci/travis-ci/issues/4701
+        throw new MissingIdnSupport(\sprintf('the host `%s` could not be processed for IDN. Verify that ext/intl is installed for IDN support and that ICU is at least version 4.6.', $host));
+        // @codeCoverageIgnoreEnd
     }
 }
