@@ -715,6 +715,8 @@ class ParserTest extends TestCase
             'invalid path PHP bug #72811' => ['[::1]:80'],
             'invalid ipvfuture' => ['//[v6.::1]/p?q#f'],
             'invalid RFC3987 host' => ['//a⒈com/p?q#f'],
+            'invalid RFC3987 host URL encoded' => ['//'.\rawurlencode('a⒈com').'/p?q#f'],
+
         ];
     }
 
@@ -730,8 +732,6 @@ class ParserTest extends TestCase
 
     public function validHostProvider()
     {
-        $long_label = \implode('.', \array_fill(0, 62, 'a'));
-
         return [
             'RFC3986 registered name' => ['bebe.be', true],
             'RFC3987 registered name (1)' => ['bébé.bé', true],

@@ -100,9 +100,9 @@ function build(array $components): string
  */
 function is_scheme(string $scheme): bool
 {
-    static $pattern = '/^[a-z][a-z\+\.\-]*$/i';
+    static $pattern = '/^([a-z][a-z\+\.\-]*)?$/i';
 
-    return '' === $scheme || \preg_match($pattern, $scheme);
+    return (bool) \preg_match($pattern, $scheme);
 }
 
 /**

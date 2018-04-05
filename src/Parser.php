@@ -16,12 +16,12 @@ declare(strict_types=1);
 
 namespace League\Uri;
 
-use TypeError;
-
 /**
  * A class to parse a URI string according to RFC3986.
  *
- * @internal use the functions League\Uri\parse and League\Uri\is_host instead
+ * @internal
+ *
+ * use the League\Uri\parse and League\Uri\is_host functions instead
  *
  * @see     https://tools.ietf.org/html/rfc3986
  * @package League\Uri
@@ -31,7 +31,9 @@ use TypeError;
 final class Parser
 {
     /**
-     * @internal default URI component values
+     * @internal
+     *
+     * default URI component values
      */
     const URI_COMPONENTS = [
         'scheme' => null, 'user' => null, 'pass' => null, 'host' => null,
@@ -39,7 +41,9 @@ final class Parser
     ];
 
     /**
-     * @internal simple URI which do not need any parsing
+     * @internal
+     *
+     * simple URI which do not need any parsing
      */
     const URI_SCHORTCUTS = [
         '' => [],
@@ -52,11 +56,17 @@ final class Parser
 
     /**
      * @internal
+     *
+     * range of invalid characters in URI string
      */
     const REGEXP_INVALID_URI_CHARS = '/[\x00-\x1f\x7f]/';
 
     /**
-     * @internal RFC3986 regular expression URI splitter
+     * @internal
+     *
+     * @see https://tools.ietf.org/html/rfc3986#appendix-B
+     *
+     * RFC3986 regular expression URI splitter
      */
     const REGEXP_URI_PARTS = ',^
         (?<scheme>(?<scontent>[^:/?\#]+):)?    # URI scheme component
@@ -68,11 +78,19 @@ final class Parser
 
     /**
      * @internal
+     *
+     * @see https://tools.ietf.org/html/rfc3986#section-3.1
+     *
+     * URI scheme regular expresssion
      */
-    const REGEXP_URI_SCHEME = '/^[a-z][a-z\+\.\-]*$/i';
+    const REGEXP_URI_SCHEME = '/^([a-z][a-z\+\.\-]*)?$/i';
 
     /**
      * @internal
+     *
+     * @see https://tools.ietf.org/html/rfc3986#section-3.2.2
+     *
+     * IPvFuture regular expression
      */
     const REGEXP_IP_FUTURE = '/^
         v(?<version>[A-F0-9])+\.
@@ -84,6 +102,10 @@ final class Parser
 
     /**
      * @internal
+     *
+     * @see https://tools.ietf.org/html/rfc3986#section-3.2.2
+     *
+     * General registered name regular expression
      */
     const REGEXP_REGISTERED_NAME = '/(?(DEFINE)
         (?<unreserved>[a-z0-9_~\-])   # . is missing as it is used to separate labels
@@ -95,6 +117,10 @@ final class Parser
 
     /**
      * @internal
+     *
+     * @see https://tools.ietf.org/html/rfc3986#section-3.2.2
+     *
+     * invalid characters in host regular expression
      */
     const REGEXP_INVALID_HOST_CHARS = '/
         [:\/?#\[\]@ ]  # gen-delims characters as well as the space character
@@ -102,6 +128,24 @@ final class Parser
 
     /**
      * @internal
+     *
+     * @see https://tools.ietf.org/html/rfc3986#section-3.3
+     *
+     * invalid path for URI without scheme and authority regular expression
+     */
+    const REGEXP_INVALID_PATH = ',^(([^/]*):)(.*)?/,';
+
+    /**
+     * @internal
+     *
+     * Host and Port splitter regular expression
+     */
+    const REGEXP_HOST_PORT = ',^(?<host>\[.*\]|[^:]+)(:(?<port>.*))?$,';
+
+    /**
+     * @internal
+     *
+     * IDN Host detector regular expression
      */
     const REGEXP_IDN_PATTERN = '/[^\x20-\x7f]/';
 
@@ -148,18 +192,19 @@ final class Parser
      * </ul>
      *
      * @see https://tools.ietf.org/html/rfc3986
-     * @see https://tools.ietf.org/html/rfc3986#section-2
      *
-     * @param mixed $uri
+     * @param mixed $uri any scalar or stringable object
      *
      * @throws Exception if the URI contains invalid characters
+     * @throws Exception if the URI contains an invalid scheme
+     * @throws Exception if the URI contains an invalid path
      *
      * @return array
      */
     public function parse($uri): array
     {
         if (!\is_scalar($uri) && !\method_exists($uri, '__toString')) {
-            throw new TypeError(\sprintf('The uri must be a scalar or a stringable object `%s` given', \gettype($uri)));
+            throw new \TypeError(\sprintf('The uri must be a scalar or a stringable object `%s` given', \gettype($uri)));
         }
 
         $uri = (string) $uri;
@@ -192,40 +237,16 @@ final class Parser
             return $components;
         }
 
-        return $this->split($uri);
-    }
-
-    /**
-     * Split an URI using the RFC3986 rules and return its components.
-     *
-     * @see https://tools.ietf.org/html/rfc3986#section-3
-     * @see https://tools.ietf.org/html/rfc3986#appendix-B
-     *
-     * @param string $uri
-     *
-     * @throws Exception if the URI contains an invalid scheme
-     * @throws Exception if the URI contains an invalid path
-     *
-     * @return array
-     */
-    private function split(string $uri): array
-    {
+        //use RFC3986 URI regexp to split the URI
         \preg_match(self::REGEXP_URI_PARTS, $uri, $parts);
         $parts += ['query' => '', 'fragment' => ''];
 
-        if (
-            ':' === $parts['scheme']
-            || ('' !== $parts['scontent'] && !\preg_match(self::REGEXP_URI_SCHEME, $parts['scontent']))
-        ) {
+        if (':' === $parts['scheme'] || !\preg_match(self::REGEXP_URI_SCHEME, $parts['scontent'])) {
             throw new Exception(\sprintf('The uri `%s` contains an invalid scheme', $uri));
         }
 
-        if (
-            '' === $parts['scheme'].$parts['authority']
-            && false !== ($pos = \strpos($parts['path'], ':'))
-            && false === \strpos(\substr($parts['path'], 0, $pos), '/')
-        ) {
-            throw new Exception(\sprintf('The uri `%s` contains an invalid path', $uri));
+        if ('' === $parts['scheme'].$parts['authority'] && \preg_match(self::REGEXP_INVALID_PATH, $parts['path'])) {
+            throw new Exception(\sprintf('The uri `%s` contains an invalid path.', $uri));
         }
 
         return \array_merge(
@@ -247,94 +268,33 @@ final class Parser
      *
      * @param string $authority
      *
-     * @throws Exception If the host is invalid
+     * @throws Exception If the URI authority part is invalid
      *
      * @return array
      */
     private function parseAuthority(string $authority): array
     {
+        $components = ['host' => ''];
         if ('' === $authority) {
-            return ['host' => ''];
+            return $components;
         }
 
         $parts = \explode('@', $authority, 2);
-        $hostport = $parts[1] ?? $parts[0];
-        $user_info = isset($parts[1]) ? $parts[0] : null;
-        $components = [];
-        if (null !== $user_info) {
-            list($components['user'], $components['pass']) = \explode(':', $user_info, 2) + [1 => null];
+        if (isset($parts[1])) {
+            list($components['user'], $components['pass']) = \explode(':', $parts[0], 2) + [1 => null];
         }
 
-        list($host, $port) = $this->parseHostPort($hostport);
-        $components['port'] = $this->filterPort($port);
-        if ($this->isHost($host)) {
-            $components['host'] = $host;
+        \preg_match(self::REGEXP_HOST_PORT, $parts[1] ?? $parts[0], $matches);
+        $matches += ['port' => ''];
+        $port = '' === $matches['port'] ? null : \filter_var($matches['port'], \FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
+        if (false !== $port && $this->isHost($matches['host'])) {
+            $components['port'] = $port;
+            $components['host'] = $matches['host'];
 
             return $components;
         }
 
-        throw new Exception(\sprintf('The host `%s` is invalid', $host));
-    }
-
-    /**
-     * Parse the URI host and port.
-     *
-     * The hostport contains the host and optionally the port.
-     *
-     * @param string $hostport
-     *
-     * @throws Exception If the URI part is invalid
-     *
-     * @return array
-     */
-    private function parseHostPort(string $hostport): array
-    {
-        if (false === ($pos = \strpos($hostport, '['))) {
-            return \explode(':', $hostport, 2) + [1 => ''];
-        }
-
-        if (0 !== $pos || false === ($delimiter_offset = \strpos($hostport, ']'))) {
-            throw new Exception(\sprintf('The URI part `%s` is invalid', $hostport));
-        }
-
-        ++$delimiter_offset;
-        $host = \substr($hostport, 0, $delimiter_offset);
-        $port = \substr($hostport, $delimiter_offset);
-        if ('' === $port) {
-            return [$host, $port];
-        }
-
-        if (':' === $port[0]) {
-            return [$host, \substr($port, 1)];
-        }
-
-        throw new Exception(\sprintf('The URI part `%s` is invalid', $hostport));
-    }
-
-    /**
-     * Validate a port number.
-     *
-     * An exception is raised for ports outside the established TCP and UDP port ranges.
-     *
-     * @see https://tools.ietf.org/html/rfc3986#section-3.2.3
-     *
-     * @param string $port the port number
-     *
-     * @throws Exception If the port number is invalid.
-     *
-     * @return null|int
-     */
-    private function filterPort(string $port)
-    {
-        if ('' === $port) {
-            return null;
-        }
-
-        if (false !== ($res = \filter_var($port, \FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]))) {
-            return $res;
-        }
-
-        throw new Exception(\sprintf('The submitted port `%s` is invalid', $port));
+        throw new Exception(\sprintf('The URI authority `%s` is invalid', $authority));
     }
 
     /**
@@ -348,7 +308,7 @@ final class Parser
      */
     public function isHost(string $host): bool
     {
-        return $this->isIpHost($host) || $this->isRegisteredName($host);
+        return '' === $host || $this->isIpHost($host) || $this->isRegisteredName($host);
     }
 
     /**
@@ -364,7 +324,7 @@ final class Parser
      */
     private function isIpHost(string $host): bool
     {
-        if ('[' !== ($host[0] ?? '') || ']' !== \substr($host, -1)) {
+        if ('[' !== $host[0] || ']' !== \substr($host, -1)) {
             return false;
         }
 
@@ -373,8 +333,8 @@ final class Parser
             return true;
         }
 
-        if (\preg_match(self::REGEXP_IP_FUTURE, $ip, $matches) && !\in_array($matches['version'], ['4', '6'], true)) {
-            return true;
+        if (\preg_match(self::REGEXP_IP_FUTURE, $ip, $matches)) {
+            return !\in_array($matches['version'], ['4', '6'], true);
         }
 
         if (false === ($pos = \strpos($ip, '%'))) {
@@ -407,6 +367,7 @@ final class Parser
      */
     private function isRegisteredName(string $host): bool
     {
+        $host = \rawurldecode($host);
         if (\preg_match(self::REGEXP_REGISTERED_NAME, $host)) {
             return true;
         }
