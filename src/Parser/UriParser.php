@@ -340,20 +340,17 @@ final class UriParser
             return !\in_array($matches['version'], ['4', '6'], true);
         }
 
-        if (false === ($pos = \strpos($ip, '%'))) {
-            return false;
-        }
-
-        if (\preg_match(self::REGEXP_INVALID_HOST_CHARS, \rawurldecode(\substr($ip, $pos)))) {
+        if (false === ($pos = \strpos($ip, '%')) || \preg_match(
+            self::REGEXP_INVALID_HOST_CHARS,
+            \rawurldecode(\substr($ip, $pos))
+        )) {
             return false;
         }
 
         $ip = \substr($ip, 0, $pos);
-        if (!\filter_var($ip, \FILTER_VALIDATE_IP, \FILTER_FLAG_IPV6)) {
-            return false;
-        }
 
-        return \substr(\inet_pton($ip) & self::ZONE_ID_ADDRESS_BLOCK, 0, 2) === self::ZONE_ID_ADDRESS_BLOCK;
+        return \filter_var($ip, \FILTER_VALIDATE_IP, \FILTER_FLAG_IPV6) &&
+            \substr(\inet_pton($ip) & self::ZONE_ID_ADDRESS_BLOCK, 0, 2) === self::ZONE_ID_ADDRESS_BLOCK;
     }
 
     /**
