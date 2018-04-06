@@ -59,6 +59,9 @@ The `League\Uri\parse` function is a drop-in replacement to PHP's `parse_url` fu
 #### The parser is RFC3986/RFC3987 compliant
 
 ```php
+<?php
+
+use League\Uri;
 
 var_export(Uri\parse('http://foo.com?@bar.com/'));
 //returns the following array
@@ -89,6 +92,8 @@ var_export(parse_url('http://foo.com?@bar.com/'));
 ```php
 <?php
 
+use League\Uri;
+
 var_export(Uri\parse('http://www.example.com/'));
 //returns the following array
 //array(
@@ -116,6 +121,8 @@ var_export(parse_url('http://www.example.com/'));
 ```php
 <?php
 
+use League\Uri;
+
 $uri = 'http://www.example.com/';
 
 Uri\parse($uri)['query']; //returns null
@@ -127,6 +134,9 @@ parse_url($uri, PHP_URL_QUERY); //returns null
 A distinction is made between an unspecified component, which will be set to `null` and an empty component which will be equal to the empty string.
 
 ```php
+<?php
+
+use League\Uri;
 
 $uri = 'http://www.example.com/';
 
@@ -141,6 +151,8 @@ Since a URI is made of at least a path component, this component is never equal 
 ```php
 <?php
 
+use League\Uri;
+
 $uri = 'http://www.example.com?';
 Uri\parse($uri)['path'];         //returns ''
 parse_url($uri, PHP_URL_PATH); //returns null
@@ -150,6 +162,8 @@ parse_url($uri, PHP_URL_PATH); //returns null
 
 ```php
 <?php
+
+use League\Uri;
 
 $uri = '//example.com:toto';
 Uri\parse($uri);
@@ -166,6 +180,8 @@ Just like `parse_url`, the `League\Uri\Parser` only parses and extracts from the
 
 ```php
 <?php
+
+use League\Uri;
 
 $uri = 'http:www.example.com';
 var_export(Uri\parse($uri));
@@ -184,7 +200,7 @@ var_export(Uri\parse($uri));
 
 ### Scheme validation
 
-If you have a scheme **string** you can validate it against the parser. The scheme is considered to be valid if it is:
+If you have a scheme **string** you can validate it using the `League\Uri\is_scheme` function. The scheme is considered to be valid if it is:
 
 - an empty string;
 - a string which follow [RFC3986 rules](https://tools.ietf.org/html/rfc3986#section-3.1);
@@ -194,7 +210,6 @@ If you have a scheme **string** you can validate it against the parser. The sche
 
 use League\Uri;
 
-$parser = new Parser();
 Uri\is_scheme('example.com'); //returns false
 Uri\is_scheme('ssh+svn'); //returns true
 Uri\is_scheme('data');  //returns true
@@ -203,7 +218,7 @@ Uri\is_scheme('data:'); //returns false
 
 ### Host validation
 
-If you have a host **string** you can validate it against the parser. The host is considered to be valid if it is:
+If you have a host **string** you can validate it using the `League\Uri\is_host` function. The host is considered to be valid if it is:
 
 - an empty string;
 - a IP Host;
@@ -224,7 +239,7 @@ Uri\is_host('[127.0.0.1]'); //returns false
 
 ### Port validation
 
-If you have a port, you can validate it against the parser. The port is considered to be valid if it is:
+If you have a port, you can validate it using the `League\Uri\is_port` function. The port is considered to be valid if it is:
 
 - a numeric value which follow [RFC3986 rules](https://tools.ietf.org/html/rfc3986#section-3.2.3);
 
@@ -249,7 +264,7 @@ use League\Uri;
 function build(array $components): string
 ~~~
 
-You can rebuild a URI from its hash representation returned by the `Uri\parse` function or PHP's `parse_url` function using the `League\Uri\build` function.  
+You can rebuild a URI from its hash representation returned by the `League\Uri\parse` function or PHP's `parse_url` function using the `League\Uri\build` function.  
 
 If you supply your own hash you are responsible for providing valid encoded components without their URI delimiters.
 
@@ -277,7 +292,7 @@ $uri = Uri\build($components);
 echo $uri; //displays http://hello@foo.com?@bar.com/
 ~~~
 
-The `Uri\build` function never output the `pass` component as suggested by [RFC3986](https://tools.ietf.org/html/rfc3986#section-7.5).
+The `League\Uri\build` function never output the `pass` component as suggested by [RFC3986](https://tools.ietf.org/html/rfc3986#section-7.5).
 
 Testing
 -------
