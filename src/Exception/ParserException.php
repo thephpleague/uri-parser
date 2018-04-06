@@ -14,17 +14,18 @@
  */
 declare(strict_types=1);
 
-namespace League\Uri;
+namespace League\Uri\Exception;
+
+use InvalidArgumentException;
 
 /**
- * An exception thrown if the IDN support is missing or
- * the ICU is not at least version 4.6.
+ * An exception thrown if URI parsing fails.
  *
  * @see     https://tools.ietf.org/html/rfc3986
  * @package League\Uri
  * @author  Ignace Nyamagana Butera <nyamsprod@gmail.com>
- * @since   1.4.0
+ * @since   0.2.0
  */
-class MissingIdnSupport extends Exception
+class ParserException extends InvalidArgumentException
 {
 }

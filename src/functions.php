@@ -16,6 +16,8 @@ declare(strict_types=1);
 
 namespace League\Uri;
 
+use League\Uri\Parser\UriParser;
+
 /**
  * Parse an URI string into its components.
  *
@@ -28,15 +30,13 @@ namespace League\Uri;
  *
  * @param mixed $uri
  *
- * @throws Exception if the URI contains invalid characters
- *
  * @return array
  */
 function parse($uri): array
 {
     static $parser;
 
-    $parser = $parser ?? new Parser();
+    $parser = $parser ?? new UriParser();
 
     return $parser->parse($uri);
 }
@@ -119,7 +119,7 @@ function is_host(string $host): bool
 {
     static $parser;
 
-    $parser = $parser ?? new Parser();
+    $parser = $parser ?? new UriParser();
 
     return $parser->isHost($host);
 }

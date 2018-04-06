@@ -14,7 +14,10 @@
  */
 declare(strict_types=1);
 
-namespace League\Uri;
+namespace League\Uri\Parser;
+
+use League\Uri\Exception\MissingIdnSupport;
+use League\Uri\Exception\ParserException;
 
 /**
  * A class to parse a URI string according to RFC3986.
@@ -28,7 +31,7 @@ namespace League\Uri;
  * @author  Ignace Nyamagana Butera <nyamsprod@gmail.com>
  * @since   0.1.0
  */
-final class Parser
+final class UriParser
 {
     /**
      * @internal
@@ -214,7 +217,7 @@ final class Parser
         }
 
         if (\preg_match(self::REGEXP_INVALID_URI_CHARS, $uri)) {
-            throw new Exception(\sprintf('The uri `%s` contains invalid characters', $uri));
+            throw new ParserException(\sprintf('The uri `%s` contains invalid characters', $uri));
         }
 
         //if the first character is a known URI delimiter parsing can be simplified
@@ -242,11 +245,11 @@ final class Parser
         $parts += ['query' => '', 'fragment' => ''];
 
         if (':' === $parts['scheme'] || !\preg_match(self::REGEXP_URI_SCHEME, $parts['scontent'])) {
-            throw new Exception(\sprintf('The uri `%s` contains an invalid scheme', $uri));
+            throw new ParserException(\sprintf('The uri `%s` contains an invalid scheme', $uri));
         }
 
         if ('' === $parts['scheme'].$parts['authority'] && \preg_match(self::REGEXP_INVALID_PATH, $parts['path'])) {
-            throw new Exception(\sprintf('The uri `%s` contains an invalid path.', $uri));
+            throw new ParserException(\sprintf('The uri `%s` contains an invalid path.', $uri));
         }
 
         return \array_merge(
@@ -294,7 +297,7 @@ final class Parser
             return $components;
         }
 
-        throw new Exception(\sprintf('The URI authority `%s` is invalid', $authority));
+        throw new ParserException(\sprintf('The URI authority `%s` is invalid', $authority));
     }
 
     /**
