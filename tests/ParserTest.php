@@ -762,6 +762,12 @@ class ParserTest extends TestCase
         ];
     }
 
+    public function testHostThrowsTypeError()
+    {
+        $this->expectException(TypeError::class);
+        Uri\is_host(['host']);
+    }
+
     /**
      * @dataProvider validPortProvider
      * @param mixed $port
@@ -783,6 +789,12 @@ class ParserTest extends TestCase
         ];
     }
 
+    public function testPortThrowsTypeError()
+    {
+        $this->expectException(TypeError::class);
+        Uri\is_port(['host']);
+    }
+
     /**
      * @dataProvider validSchemeProvider
      * @param string $scheme
@@ -801,6 +813,12 @@ class ParserTest extends TestCase
             'invalid string' => ['tété', false],
             'with + signe' => ['svn+ssh', true],
         ];
+    }
+
+    public function testSchemeThrowsTypeError()
+    {
+        $this->expectException(TypeError::class);
+        Uri\is_scheme(null);
     }
 
     /**

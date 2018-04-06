@@ -26,7 +26,7 @@ use League\Uri\Parser\UriParser;
  *
  * @see https://tools.ietf.org/html/rfc3986
  * @see https://tools.ietf.org/html/rfc3986#section-2
- * @see Parser::parse()
+ * @see UriParser::parse()
  *
  * @param mixed $uri
  *
@@ -43,7 +43,7 @@ function parse($uri): array
 
 /**
  * Generate an URI string representation from its parsed representation
- * returned by League\Uri\Parser::parse() or PHP's parse_url.
+ * returned by League\Uri\parse() or PHP's parse_url.
  *
  * If you supply your own array, you are responsible for providing
  * valid components without their URI delimiters.
@@ -94,34 +94,42 @@ function build(array $components): string
  *
  * @see https://tools.ietf.org/html/rfc3986#section-3.1
  *
- * @param string $scheme
+ * @param mixed $scheme
  *
  * @return bool
  */
-function is_scheme(string $scheme): bool
+function is_scheme($scheme): bool
 {
+    if (!\is_scalar($scheme) && !\method_exists($scheme, '__toString')) {
+        throw new \TypeError(\sprintf('The scheme must be a scalar or a stringable object `%s` given', \gettype($scheme)));
+    }
+
     static $pattern = '/^([a-z][a-z\+\.\-]*)?$/i';
 
-    return (bool) \preg_match($pattern, $scheme);
+    return (bool) \preg_match($pattern, (string) $scheme);
 }
 
 /**
  * Returns whether the URI host component is valid according to RFC3986.
  *
  * @see https://tools.ietf.org/html/rfc3986#section-3.2.2
- * @see Parser::isHost()
+ * @see UriParser::isHost()
  *
- * @param string $host
+ * @param mixed $host
  *
  * @return bool
  */
-function is_host(string $host): bool
+function is_host($host): bool
 {
+    if (!\is_scalar($host) && !\method_exists($host, '__toString')) {
+        throw new \TypeError(\sprintf('The host must be a scalar or a stringable object `%s` given', \gettype($host)));
+    }
+
     static $parser;
 
     $parser = $parser ?? new UriParser();
 
-    return $parser->isHost($host);
+    return $parser->isHost((string) $host);
 }
 
 /**
@@ -135,9 +143,15 @@ function is_host(string $host): bool
  */
 function is_port($port): bool
 {
-    if (null === $port || '' === $port) {
+    if (null === $port) {
         return true;
     }
 
-    return false !== \filter_var($port, \FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
+    if (!\is_scalar($port) && !\method_exists($port, '__toString')) {
+        throw new \TypeError(\sprintf('The port can be a scalar, a stringable object or the null value, `%s` given', \gettype($port)));
+    }
+
+    $port = (string) $port;
+
+    return '' === $port || false !== \filter_var($port, \FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
 }
