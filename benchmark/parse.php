@@ -1,7 +1,5 @@
 <?php
 
-require __DIR__.'/../src/Exception/ParserException.php';
-require __DIR__.'/../src/Exception/MissingIdnSupport.php';
 require __DIR__.'/../src/Parser/UriParser.php';
 require __DIR__.'/../src/functions.php';
 

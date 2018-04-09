@@ -683,6 +683,19 @@ class ParserTest extends TestCase
                     'fragment' => 'test',
                 ],
             ],
+            'Authority is the colon' => [
+                'ftp://:/p?q#f',
+                [
+                    'scheme' => 'ftp',
+                    'user' => null,
+                    'pass' => null,
+                    'host' => '',
+                    'port' => null,
+                    'path' => '/p',
+                    'query' => 'q',
+                    'fragment' => 'f',
+                ],
+            ],
         ];
     }
 

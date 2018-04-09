@@ -288,7 +288,7 @@ final class UriParser
         }
 
         \preg_match(self::REGEXP_HOST_PORT, $parts[1] ?? $parts[0], $matches);
-        $matches += ['port' => ''];
+        $matches += ['host' => '', 'port' => ''];
         $port = '' === $matches['port'] ? null : \filter_var($matches['port'], \FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
         if (false !== $port && $this->isHost($matches['host'])) {
             $components['port'] = $port;
@@ -311,7 +311,15 @@ final class UriParser
      */
     public function isHost(string $host): bool
     {
-        return '' === $host || $this->isIpHost($host) || $this->isRegisteredName($host);
+        if ('' === $host) {
+            return true;
+        }
+
+        if ('[' !== $host[0] || ']' !== \substr($host, -1)) {
+            return $this->isRegisteredName($host);
+        }
+
+        return $this->isIpHost(\substr($host, 1, -1));
     }
 
     /**
@@ -321,36 +329,31 @@ final class UriParser
      * @see http://tools.ietf.org/html/rfc6874#section-2
      * @see http://tools.ietf.org/html/rfc6874#section-4
      *
-     * @param string $host
+     * @param string $ip_host
      *
      * @return bool
      */
-    private function isIpHost(string $host): bool
+    private function isIpHost(string $ip_host): bool
     {
-        if ('[' !== $host[0] || ']' !== \substr($host, -1)) {
-            return false;
-        }
-
-        $ip = \substr($host, 1, -1);
-        if (\filter_var($ip, \FILTER_VALIDATE_IP, \FILTER_FLAG_IPV6)) {
+        if (\filter_var($ip_host, \FILTER_VALIDATE_IP, \FILTER_FLAG_IPV6)) {
             return true;
         }
 
-        if (\preg_match(self::REGEXP_IP_FUTURE, $ip, $matches)) {
+        if (\preg_match(self::REGEXP_IP_FUTURE, $ip_host, $matches)) {
             return !\in_array($matches['version'], ['4', '6'], true);
         }
 
-        if (false === ($pos = \strpos($ip, '%')) || \preg_match(
+        if (false === ($pos = \strpos($ip_host, '%')) || \preg_match(
             self::REGEXP_INVALID_HOST_CHARS,
-            \rawurldecode(\substr($ip, $pos))
+            \rawurldecode(\substr($ip_host, $pos))
         )) {
             return false;
         }
 
-        $ip = \substr($ip, 0, $pos);
+        $ip_host = \substr($ip_host, 0, $pos);
 
-        return \filter_var($ip, \FILTER_VALIDATE_IP, \FILTER_FLAG_IPV6) &&
-            \substr(\inet_pton($ip) & self::ZONE_ID_ADDRESS_BLOCK, 0, 2) === self::ZONE_ID_ADDRESS_BLOCK;
+        return \filter_var($ip_host, \FILTER_VALIDATE_IP, \FILTER_FLAG_IPV6) &&
+            (\substr(\inet_pton($ip_host) & self::ZONE_ID_ADDRESS_BLOCK, 0, 2)) === self::ZONE_ID_ADDRESS_BLOCK;
     }
 
     /**
