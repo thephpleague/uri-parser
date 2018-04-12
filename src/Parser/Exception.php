@@ -14,7 +14,7 @@
  */
 declare(strict_types=1);
 
-namespace League\Uri\Exception;
+namespace League\Uri\Parser;
 
 use InvalidArgumentException;
 
@@ -26,6 +26,6 @@ use InvalidArgumentException;
  * @author  Ignace Nyamagana Butera <nyamsprod@gmail.com>
  * @since   0.2.0
  */
-class ParserException extends InvalidArgumentException
+class Exception extends InvalidArgumentException
 {
 }

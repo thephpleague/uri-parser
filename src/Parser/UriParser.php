@@ -16,9 +16,6 @@ declare(strict_types=1);
 
 namespace League\Uri\Parser;
 
-use League\Uri\Exception\MissingIdnSupport;
-use League\Uri\Exception\ParserException;
-
 /**
  * A class to parse a URI string according to RFC3986.
  *
@@ -143,7 +140,7 @@ final class UriParser
      *
      * Host and Port splitter regular expression
      */
-    const REGEXP_HOST_PORT = ',^(?<host>\[.*\]|[^:]+)(:(?<port>.*))?$,';
+    const REGEXP_HOST_PORT = ',^(?<host>\[.*\]|[^:]*)(:(?<port>.*))?$,';
 
     /**
      * @internal
@@ -217,7 +214,7 @@ final class UriParser
         }
 
         if (\preg_match(self::REGEXP_INVALID_URI_CHARS, $uri)) {
-            throw new ParserException(\sprintf('The uri `%s` contains invalid characters', $uri));
+            throw new Exception(\sprintf('The uri `%s` contains invalid characters', $uri));
         }
 
         //if the first character is a known URI delimiter parsing can be simplified
@@ -245,11 +242,11 @@ final class UriParser
         $parts += ['query' => '', 'fragment' => ''];
 
         if (':' === $parts['scheme'] || !\preg_match(self::REGEXP_URI_SCHEME, $parts['scontent'])) {
-            throw new ParserException(\sprintf('The uri `%s` contains an invalid scheme', $uri));
+            throw new Exception(\sprintf('The uri `%s` contains an invalid scheme', $uri));
         }
 
         if ('' === $parts['scheme'].$parts['authority'] && \preg_match(self::REGEXP_INVALID_PATH, $parts['path'])) {
-            throw new ParserException(\sprintf('The uri `%s` contains an invalid path.', $uri));
+            throw new Exception(\sprintf('The uri `%s` contains an invalid path.', $uri));
         }
 
         return \array_merge(
@@ -288,7 +285,7 @@ final class UriParser
         }
 
         \preg_match(self::REGEXP_HOST_PORT, $parts[1] ?? $parts[0], $matches);
-        $matches += ['host' => '', 'port' => ''];
+        $matches += ['port' => ''];
         $port = '' === $matches['port'] ? null : \filter_var($matches['port'], \FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
         if (false !== $port && $this->isHost($matches['host'])) {
             $components['port'] = $port;
@@ -297,7 +294,7 @@ final class UriParser
             return $components;
         }
 
-        throw new ParserException(\sprintf('The URI authority `%s` is invalid', $authority));
+        throw new Exception(\sprintf('The URI authority `%s` is invalid', $authority));
     }
 
     /**

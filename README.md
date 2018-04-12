@@ -167,7 +167,7 @@ use League\Uri;
 
 $uri = '//example.com:toto';
 Uri\parse($uri);
-//throw a League\Uri\Exception\ParserException
+//throw a League\Uri\Parser\Exception
 
 parse_url($uri); //returns false
 ```

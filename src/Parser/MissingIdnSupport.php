@@ -14,7 +14,7 @@
  */
 declare(strict_types=1);
 
-namespace League\Uri\Exception;
+namespace League\Uri\Parser;
 
 /**
  * An exception thrown if the IDN support is missing or
@@ -25,6 +25,6 @@ namespace League\Uri\Exception;
  * @author  Ignace Nyamagana Butera <nyamsprod@gmail.com>
  * @since   1.4.0
  */
-class MissingIdnSupport extends ParserException
+class MissingIdnSupport extends Exception
 {
 }

@@ -3,7 +3,7 @@
 namespace LeagueTest\Uri\Parser;
 
 use League\Uri;
-use League\Uri\Exception\ParserException as Exception;
+use League\Uri\Parser\Exception;
 use PHPUnit\Framework\TestCase;
 use TypeError;
 
