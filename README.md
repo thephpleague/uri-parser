@@ -52,7 +52,7 @@ $ composer require league/uri-parser
 Documentation
 ---------
 
-### URI parsing
+### URI Parser
 
 The `League\Uri\parse` function is a drop-in replacement to PHP's `parse_url` function, with the following differences:
 
@@ -138,7 +138,7 @@ A distinction is made between an unspecified component, which will be set to `nu
 
 use League\Uri;
 
-$uri = 'http://www.example.com/';
+$uri = 'http://www.example.com?';
 
 Uri\parse($uri)['query'];       //returns ''
 parse_url($uri, PHP_URL_QUERY); //returns null
@@ -198,62 +198,6 @@ var_export(Uri\parse($uri));
 //);
 ```
 
-### Scheme validation
-
-If you have a scheme **string** you can validate it using the `League\Uri\is_scheme` function. The scheme is considered to be valid if it is:
-
-- an empty string;
-- a string which follow [RFC3986 rules](https://tools.ietf.org/html/rfc3986#section-3.1);
-
-```php
-<?php
-
-use League\Uri;
-
-Uri\is_scheme('example.com'); //returns false
-Uri\is_scheme('ssh+svn'); //returns true
-Uri\is_scheme('data');  //returns true
-Uri\is_scheme('data:'); //returns false
-```
-
-### Host validation
-
-If you have a host **string** you can validate it using the `League\Uri\is_host` function. The host is considered to be valid if it is:
-
-- an empty string;
-- a IP Host;
-- a registered name;
-
-As described in RFC3986 and RFC3987.
-
-```php
-<?php
-
-use League\Uri;
-
-Uri\is_host('example.com'); //returns true
-Uri\is_host('/path/to/yes'); //returns false
-Uri\is_host('[:]'); //returns true
-Uri\is_host('[127.0.0.1]'); //returns false
-```
-
-### Port validation
-
-If you have a port, you can validate it using the `League\Uri\is_port` function. The port is considered to be valid if it is:
-
-- a numeric value which follow [RFC3986 rules](https://tools.ietf.org/html/rfc3986#section-3.2.3);
-
-```php
-<?php
-
-use League\Uri;
-
-Uri\is_port('example.com'); //returns false
-Uri\is_port(888);           //returns true
-Uri\is_port('23');    //returns true
-Uri\is_port('data:'); //returns false
-```
-
 ### URI Builder
 
 ~~~php
@@ -292,7 +236,65 @@ $uri = Uri\build($components);
 echo $uri; //displays http://hello@foo.com?@bar.com/
 ~~~
 
-The `League\Uri\build` function never output the `pass` component as suggested by [RFC3986](https://tools.ietf.org/html/rfc3986#section-7.5).
+**The `League\Uri\build` function never output the `pass` component as suggested by [RFC3986](https://tools.ietf.org/html/rfc3986#section-7.5).**
+
+### URI Components Validation
+
+#### Scheme validation
+
+If you have a scheme **string** you can validate it using the `League\Uri\is_scheme` function. The scheme is considered to be valid if it is:
+
+- an empty string;
+- a string which follow [RFC3986 rules](https://tools.ietf.org/html/rfc3986#section-3.1);
+
+```php
+<?php
+
+use League\Uri;
+
+Uri\is_scheme('example.com'); //returns false
+Uri\is_scheme('ssh+svn'); //returns true
+Uri\is_scheme('data');  //returns true
+Uri\is_scheme('data:'); //returns false
+```
+
+#### Host validation
+
+If you have a host **string** you can validate it using the `League\Uri\is_host` function. The host is considered to be valid if it is:
+
+- an empty string;
+- a IP Host;
+- a registered name;
+
+As described in [RFC3986](https://tools.ietf.org/html/rfc3986#section-3.2.2) and RFC3987.
+
+```php
+<?php
+
+use League\Uri;
+
+Uri\is_host('example.com'); //returns true
+Uri\is_host('/path/to/yes'); //returns false
+Uri\is_host('[:]'); //returns true
+Uri\is_host('[127.0.0.1]'); //returns false
+```
+
+#### Port validation
+
+If you have a port, you can validate it using the `League\Uri\is_port` function. The port is considered to be valid if it is:
+
+- a numeric value which follow [RFC3986 rules](https://tools.ietf.org/html/rfc3986#section-3.2.3);
+
+```php
+<?php
+
+use League\Uri;
+
+Uri\is_port('example.com'); //returns false
+Uri\is_port(888);           //returns true
+Uri\is_port('23');    //returns true
+Uri\is_port('data:'); //returns false
+```
 
 Testing
 -------
