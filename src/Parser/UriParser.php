@@ -287,7 +287,8 @@ final class UriParser
         \preg_match(self::REGEXP_HOST_PORT, $parts[1] ?? $parts[0], $matches);
         $matches += ['port' => ''];
         $port = '' === $matches['port'] ? null : \filter_var($matches['port'], \FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
-        if (false !== $port && $this->isHost($matches['host'])) {
+        $this->filterHost($matches['host']);
+        if (false !== $port) {
             $components['port'] = $port;
             $components['host'] = $matches['host'];
 
@@ -304,19 +305,101 @@ final class UriParser
      *
      * @param string $host
      *
-     * @return bool
+     * @throws Exception if the registered name is invalid
      */
-    public function isHost(string $host): bool
+    private function filterHost(string $host)
     {
         if ('' === $host) {
-            return true;
+            return;
         }
 
         if ('[' !== $host[0] || ']' !== \substr($host, -1)) {
-            return $this->isRegisteredName($host);
+            return $this->filterRegisteredName($host);
         }
 
-        return $this->isIpHost(\substr($host, 1, -1));
+        if (!$this->isIpHost(\substr($host, 1, -1))) {
+            throw new Exception(\sprintf('Host `%s` is invalid : the IP host is malformed', $host));
+        }
+    }
+
+    /**
+     * Returns whether the host is an IPv4 or a registered named.
+     *
+     * @see http://tools.ietf.org/html/rfc3986#section-3.2.2
+     *
+     * @param string $host
+     *
+     * @throws Exception         if the registered name is invalid
+     * @throws MissingIdnSupport if IDN support or ICU requirement are not available or met.
+     */
+    private function filterRegisteredName(string $host)
+    {
+        $host = \rawurldecode($host);
+        if (\preg_match(self::REGEXP_REGISTERED_NAME, $host)) {
+            return;
+        }
+
+        //to test IDN host non-ascii characters must be present in the host
+        if (!\preg_match(self::REGEXP_IDN_PATTERN, $host)) {
+            throw new Exception(\sprintf('Host `%s` is invalid : the host is not a valid registered name', $host));
+        }
+
+        // @codeCoverageIgnoreStart
+        // added because it is not possible in travis to disabled the ext/intl extension
+        // see travis issue https://github.com/travis-ci/travis-ci/issues/4701
+        static $idn_support = null;
+        $idn_support = $idn_support ?? \function_exists('\idn_to_ascii') && \defined('\INTL_IDNA_VARIANT_UTS46');
+        if (!$idn_support) {
+            throw new MissingIdnSupport(\sprintf('the host `%s` could not be processed for IDN. Verify that ext/intl is installed for IDN support and that ICU is at least version 4.6.', $host));
+        }
+        // @codeCoverageIgnoreEnd
+
+        \idn_to_ascii($host, \IDNA_NONTRANSITIONAL_TO_ASCII, \INTL_IDNA_VARIANT_UTS46, $arr);
+        if (0 === $arr['errors']) {
+            return;
+        }
+
+        throw new Exception(\sprintf('Host `%s` is not a valid IDN host : %s', $host, $this->getIDNAErrors($arr['errors'])));
+    }
+
+    /**
+     * Retrieves and format IDNA conversion error message.
+     *
+     * @see http://icu-project.org/apiref/icu4j/com/ibm/icu/text/IDNA.Error.html
+     *
+     * @param int $error_byte
+     *
+     * @return string
+     */
+    private function getIDNAErrors(int $error_byte): string
+    {
+        /**
+         * IDNA errors.
+         */
+        static $idn_errors = [
+            IDNA_ERROR_EMPTY_LABEL => 'a non-final domain name label (or the whole domain name) is empty',
+            IDNA_ERROR_LABEL_TOO_LONG => 'a domain name label is longer than 63 bytes',
+            IDNA_ERROR_DOMAIN_NAME_TOO_LONG => 'a domain name is longer than 255 bytes in its storage form',
+            IDNA_ERROR_LEADING_HYPHEN => 'a label starts with a hyphen-minus ("-")',
+            IDNA_ERROR_TRAILING_HYPHEN => 'a label ends with a hyphen-minus ("-")',
+            IDNA_ERROR_HYPHEN_3_4 => 'a label contains hyphen-minus ("-") in the third and fourth positions',
+            IDNA_ERROR_LEADING_COMBINING_MARK => 'a label starts with a combining mark',
+            IDNA_ERROR_DISALLOWED => 'a label or domain name contains disallowed characters',
+            IDNA_ERROR_PUNYCODE => 'a label starts with "xn--" but does not contain valid Punycode',
+            IDNA_ERROR_LABEL_HAS_DOT => 'a label contains a dot=full stop',
+            IDNA_ERROR_INVALID_ACE_LABEL => 'An ACE label does not contain a valid label string',
+            IDNA_ERROR_BIDI => 'a label does not meet the IDNA BiDi requirements (for right-to-left characters)',
+            IDNA_ERROR_CONTEXTJ => 'a label does not meet the IDNA CONTEXTJ requirements',
+        ];
+
+        $res = [];
+        foreach ($idn_errors as $error => $reason) {
+            if ($error_byte & $error) {
+                $res[] = $reason;
+            }
+        }
+
+        return empty($res) ? 'Unknown IDNA conversion error.' : \implode(', ', $res).'.';
     }
 
     /**
@@ -351,44 +434,5 @@ final class UriParser
 
         return \filter_var($ip_host, \FILTER_VALIDATE_IP, \FILTER_FLAG_IPV6) &&
             (\substr(\inet_pton($ip_host) & self::ZONE_ID_ADDRESS_BLOCK, 0, 2)) === self::ZONE_ID_ADDRESS_BLOCK;
-    }
-
-    /**
-     * Returns whether the host is an IPv4 or a registered named.
-     *
-     * @see http://tools.ietf.org/html/rfc3986#section-3.2.2
-     *
-     * @param string $host
-     *
-     * @throws MissingIdnSupport if the registered name contains non-ASCII characters
-     *                           and IDN support or ICU requirement are not available or met.
-     *
-     * @return bool
-     */
-    private function isRegisteredName(string $host): bool
-    {
-        $host = \rawurldecode($host);
-        if (\preg_match(self::REGEXP_REGISTERED_NAME, $host)) {
-            return true;
-        }
-
-        //to test IDN host non-ascii characters must be present in the host
-        if (!\preg_match(self::REGEXP_IDN_PATTERN, $host)) {
-            return false;
-        }
-
-        static $idn_support = null;
-        $idn_support = $idn_support ?? \function_exists('\idn_to_ascii') && \defined('\INTL_IDNA_VARIANT_UTS46');
-        if ($idn_support) {
-            \idn_to_ascii($host, \IDNA_NONTRANSITIONAL_TO_ASCII, \INTL_IDNA_VARIANT_UTS46, $arr);
-
-            return 0 === $arr['errors'];
-        }
-
-        // @codeCoverageIgnoreStart
-        // added because it is not possible in travis to disabled the ext/intl extension
-        // see travis issue https://github.com/travis-ci/travis-ci/issues/4701
-        throw new MissingIdnSupport(\sprintf('the host `%s` could not be processed for IDN. Verify that ext/intl is installed for IDN support and that ICU is at least version 4.6.', $host));
-        // @codeCoverageIgnoreEnd
     }
 }

@@ -29,6 +29,9 @@ All Notable changes to `league-uri-parser` will be documented in this file
 - `Parser::isIpv6host` internal method no longer in use
 - `Parser::isHostLabel` internal method no longer in use
 - `Parser::toAscii` internal method no longer in use
+- `League\Uri\is_scheme` function use `League\Uri\parse` instead
+- `League\Uri\is_host` function use `League\Uri\parse` instead
+- `League\Uri\is_port` function use `League\Uri\parse` instead
 
 ## 1.4.0 - 2018-03-14
 
