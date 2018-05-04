@@ -268,7 +268,7 @@ final class UriParser
      *
      * @param string $authority
      *
-     * @throws Exception If the URI authority part is invalid
+     * @throws Exception If the port component is invalid
      *
      * @return array
      */
@@ -295,7 +295,7 @@ final class UriParser
             return $components;
         }
 
-        throw new Exception(\sprintf('The URI authority `%s` is invalid', $authority));
+        throw new Exception(\sprintf('The port `%s` is invalid', $matches['port']));
     }
 
     /**
