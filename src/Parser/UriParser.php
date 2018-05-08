@@ -1,4 +1,5 @@
 <?php
+
 /**
  * League.Uri (http://uri.thephpleague.com).
  *
@@ -12,9 +13,13 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
+
 declare(strict_types=1);
 
 namespace League\Uri\Parser;
+
+use League\Uri\Exception\MalformedUri;
+use League\Uri\Exception\MissingIdnSupport;
 
 /**
  * A class to parse a URI string according to RFC3986.
@@ -195,9 +200,9 @@ final class UriParser
      *
      * @param mixed $uri any scalar or stringable object
      *
-     * @throws Exception if the URI contains invalid characters
-     * @throws Exception if the URI contains an invalid scheme
-     * @throws Exception if the URI contains an invalid path
+     * @throws MalformedUri if the URI contains invalid characters
+     * @throws MalformedUri if the URI contains an invalid scheme
+     * @throws MalformedUri if the URI contains an invalid path
      *
      * @return array
      */
@@ -214,7 +219,7 @@ final class UriParser
         }
 
         if (\preg_match(self::REGEXP_INVALID_URI_CHARS, $uri)) {
-            throw new Exception(\sprintf('The uri `%s` contains invalid characters', $uri));
+            throw new MalformedUri(\sprintf('The uri `%s` contains invalid characters', $uri));
         }
 
         //if the first character is a known URI delimiter parsing can be simplified
@@ -242,11 +247,11 @@ final class UriParser
         $parts += ['query' => '', 'fragment' => ''];
 
         if (':' === $parts['scheme'] || !\preg_match(self::REGEXP_URI_SCHEME, $parts['scontent'])) {
-            throw new Exception(\sprintf('The uri `%s` contains an invalid scheme', $uri));
+            throw new MalformedUri(\sprintf('The uri `%s` contains an invalid scheme', $uri));
         }
 
         if ('' === $parts['scheme'].$parts['authority'] && \preg_match(self::REGEXP_INVALID_PATH, $parts['path'])) {
-            throw new Exception(\sprintf('The uri `%s` contains an invalid path.', $uri));
+            throw new MalformedUri(\sprintf('The uri `%s` contains an invalid path.', $uri));
         }
 
         return \array_merge(
@@ -268,7 +273,7 @@ final class UriParser
      *
      * @param string $authority
      *
-     * @throws Exception If the port component is invalid
+     * @throws MalformedUri If the port component is invalid
      *
      * @return array
      */
@@ -295,7 +300,7 @@ final class UriParser
             return $components;
         }
 
-        throw new Exception(\sprintf('The port `%s` is invalid', $matches['port']));
+        throw new MalformedUri(\sprintf('The port `%s` is invalid', $matches['port']));
     }
 
     /**
@@ -305,7 +310,7 @@ final class UriParser
      *
      * @param string $host
      *
-     * @throws Exception if the registered name is invalid
+     * @throws MalformedUri if the registered name is invalid
      */
     private function filterHost(string $host)
     {
@@ -318,7 +323,7 @@ final class UriParser
         }
 
         if (!$this->isIpHost(\substr($host, 1, -1))) {
-            throw new Exception(\sprintf('Host `%s` is invalid : the IP host is malformed', $host));
+            throw new MalformedUri(\sprintf('Host `%s` is invalid : the IP host is malformed', $host));
         }
     }
 
@@ -329,7 +334,7 @@ final class UriParser
      *
      * @param string $host
      *
-     * @throws Exception         if the registered name is invalid
+     * @throws MalformedUri      if the registered name is invalid
      * @throws MissingIdnSupport if IDN support or ICU requirement are not available or met.
      */
     private function filterRegisteredName(string $host)
@@ -341,7 +346,7 @@ final class UriParser
 
         //to test IDN host non-ascii characters must be present in the host
         if (!\preg_match(self::REGEXP_IDN_PATTERN, $host)) {
-            throw new Exception(\sprintf('Host `%s` is invalid : the host is not a valid registered name', $host));
+            throw new MalformedUri(\sprintf('Host `%s` is invalid : the host is not a valid registered name', $host));
         }
 
         // @codeCoverageIgnoreStart
@@ -359,7 +364,7 @@ final class UriParser
             return;
         }
 
-        throw new Exception(\sprintf('Host `%s` is not a valid IDN host : %s', $host, $this->getIDNAErrors($arr['errors'])));
+        throw new MalformedUri(\sprintf('Host `%s` is not a valid IDN host : %s', $host, $this->getIDNAErrors($arr['errors'])));
     }
 
     /**

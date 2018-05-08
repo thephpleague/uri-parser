@@ -1,9 +1,23 @@
 <?php
 
+/**
+ * League.Uri (http://uri.thephpleague.com).
+ *
+ * @package    League\Uri
+ * @subpackage League\Uri\Parser
+ * @author     Ignace Nyamagana Butera <nyamsprod@gmail.com>
+ * @license    https://github.com/thephpleague/uri-parser/blob/master/LICENSE (MIT License)
+ * @version    2.0.0
+ * @link       https://github.com/thephpleague/uri-parser/
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace LeagueTest\Uri\Parser;
 
 use League\Uri;
-use League\Uri\Parser\Exception;
+use League\Uri\Exception\MalformedUri;
 use PHPUnit\Framework\TestCase;
 use TypeError;
 
@@ -705,7 +719,7 @@ class ParserTest extends TestCase
      */
     public function testParseFailed($uri)
     {
-        $this->expectException(Exception::class);
+        $this->expectException(MalformedUri::class);
         Uri\parse($uri);
     }
 
