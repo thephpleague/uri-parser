@@ -18,6 +18,6 @@ declare(strict_types=1);
 
 namespace League\Uri\Exception;
 
-class MissingIdnSupport extends FailedUriParsing
+class MissingIdnSupport extends InvalidUri
 {
 }

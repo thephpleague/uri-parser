@@ -20,6 +20,6 @@ namespace League\Uri\Exception;
 
 use InvalidArgumentException;
 
-class FailedUriParsing extends InvalidArgumentException
+class InvalidUri extends InvalidArgumentException
 {
 }
