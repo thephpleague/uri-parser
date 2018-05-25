@@ -36,11 +36,7 @@ use League\Uri\Parser\UriParser;
  */
 function parse($uri): array
 {
-    static $parser;
-
-    $parser = $parser ?? new UriParser();
-
-    return $parser->parse($uri);
+    return UriParser::parse($uri);
 }
 
 /**

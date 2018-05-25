@@ -16,17 +16,18 @@
 
 namespace LeagueTest\Uri\Parser;
 
-use League\Uri;
 use League\Uri\Exception\MalformedUri;
 use PHPUnit\Framework\TestCase;
 use TypeError;
+use function League\Uri\build;
+use function League\Uri\parse;
 
 class ParserTest extends TestCase
 {
     public function testParserFailedWithWrongArgumentType()
     {
         $this->expectException(TypeError::class);
-        Uri\parse(['scheme://user:pass@host:81/path?query#fragment']);
+        parse(['scheme://user:pass@host:81/path?query#fragment']);
     }
 
     /**
@@ -36,7 +37,7 @@ class ParserTest extends TestCase
      */
     public function testParseSucced($uri, $expected)
     {
-        $this->assertSame($expected, Uri\parse($uri));
+        $this->assertSame($expected, parse($uri));
     }
 
     public function validUriProvider()
@@ -720,7 +721,7 @@ class ParserTest extends TestCase
     public function testParseFailed($uri)
     {
         $this->expectException(MalformedUri::class);
-        Uri\parse($uri);
+        parse($uri);
     }
 
     public function invalidUriProvider()
@@ -755,7 +756,7 @@ class ParserTest extends TestCase
      */
     public function testBuild($uri, $expected)
     {
-        $this->assertSame($expected, Uri\build(Uri\parse($uri)));
+        $this->assertSame($expected, build(parse($uri)));
     }
 
     public function buildUriProvider()

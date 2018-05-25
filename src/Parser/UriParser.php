@@ -20,6 +20,7 @@ namespace League\Uri\Parser;
 
 use League\Uri\Exception\MalformedUri;
 use League\Uri\Exception\MissingIdnSupport;
+use TypeError;
 
 /**
  * A class to parse a URI string according to RFC3986.
@@ -35,6 +36,13 @@ use League\Uri\Exception\MissingIdnSupport;
  */
 final class UriParser
 {
+    /**
+     * @codeCoverageIgnore
+     */
+    private function __construct()
+    {
+    }
+
     /**
      * @internal
      *
@@ -206,10 +214,10 @@ final class UriParser
      *
      * @return array
      */
-    public function parse($uri): array
+    public static function parse($uri): array
     {
         if (!\is_scalar($uri) && !\method_exists($uri, '__toString')) {
-            throw new \TypeError(\sprintf('The uri must be a scalar or a stringable object `%s` given', \gettype($uri)));
+            throw new TypeError(\sprintf('The uri must be a scalar or a stringable object `%s` given', \gettype($uri)));
         }
 
         $uri = (string) $uri;
@@ -256,7 +264,7 @@ final class UriParser
 
         return \array_merge(
             self::URI_COMPONENTS,
-            '' === $parts['authority'] ? [] : $this->parseAuthority($parts['acontent']),
+            '' === $parts['authority'] ? [] : self::parseAuthority($parts['acontent']),
             [
                 'path' => $parts['path'],
                 'scheme' => '' === $parts['scheme'] ? null : $parts['scontent'],
@@ -277,7 +285,7 @@ final class UriParser
      *
      * @return array
      */
-    private function parseAuthority(string $authority): array
+    private static function parseAuthority(string $authority): array
     {
         $components = ['host' => ''];
         if ('' === $authority) {
@@ -292,7 +300,7 @@ final class UriParser
         \preg_match(self::REGEXP_HOST_PORT, $parts[1] ?? $parts[0], $matches);
         $matches += ['port' => ''];
         $port = '' === $matches['port'] ? null : \filter_var($matches['port'], \FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
-        $this->filterHost($matches['host']);
+        self::filterHost($matches['host']);
         if (false !== $port) {
             $components['port'] = $port;
             $components['host'] = $matches['host'];
@@ -312,17 +320,17 @@ final class UriParser
      *
      * @throws MalformedUri if the registered name is invalid
      */
-    private function filterHost(string $host)
+    private static function filterHost(string $host)
     {
         if ('' === $host) {
             return;
         }
 
         if ('[' !== $host[0] || ']' !== \substr($host, -1)) {
-            return $this->filterRegisteredName($host);
+            return self::filterRegisteredName($host);
         }
 
-        if (!$this->isIpHost(\substr($host, 1, -1))) {
+        if (!self::isIpHost(\substr($host, 1, -1))) {
             throw new MalformedUri(\sprintf('Host `%s` is invalid : the IP host is malformed', $host));
         }
     }
@@ -337,7 +345,7 @@ final class UriParser
      * @throws MalformedUri      if the registered name is invalid
      * @throws MissingIdnSupport if IDN support or ICU requirement are not available or met.
      */
-    private function filterRegisteredName(string $host)
+    private static function filterRegisteredName(string $host)
     {
         $host = \rawurldecode($host);
         if (\preg_match(self::REGEXP_REGISTERED_NAME, $host)) {
@@ -364,7 +372,7 @@ final class UriParser
             return;
         }
 
-        throw new MalformedUri(\sprintf('Host `%s` is not a valid IDN host : %s', $host, $this->getIDNAErrors($arr['errors'])));
+        throw new MalformedUri(\sprintf('Host `%s` is not a valid IDN host : %s', $host, self::getIDNAErrors($arr['errors'])));
     }
 
     /**
@@ -376,7 +384,7 @@ final class UriParser
      *
      * @return string
      */
-    private function getIDNAErrors(int $error_byte): string
+    private static function getIDNAErrors(int $error_byte): string
     {
         /**
          * IDNA errors.
@@ -418,7 +426,7 @@ final class UriParser
      *
      * @return bool
      */
-    private function isIpHost(string $ip_host): bool
+    private static function isIpHost(string $ip_host): bool
     {
         if (\filter_var($ip_host, \FILTER_VALIDATE_IP, \FILTER_FLAG_IPV6)) {
             return true;
