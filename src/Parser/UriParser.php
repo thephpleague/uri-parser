@@ -18,8 +18,8 @@ declare(strict_types=1);
 
 namespace League\Uri\Parser;
 
+use League\Uri\Exception\InvalidUri;
 use League\Uri\Exception\MalformedUri;
-use League\Uri\Exception\MissingIdnSupport;
 use TypeError;
 
 /**
@@ -363,7 +363,7 @@ final class UriParser
         static $idn_support = null;
         $idn_support = $idn_support ?? \function_exists('\idn_to_ascii') && \defined('\INTL_IDNA_VARIANT_UTS46');
         if (!$idn_support) {
-            throw new MissingIdnSupport(\sprintf('the host `%s` could not be processed for IDN. Verify that ext/intl is installed for IDN support and that ICU is at least version 4.6.', $host));
+            throw new InvalidUri(\sprintf('the host `%s` could not be processed for IDN. Verify that ext/intl is installed for IDN support and that ICU is at least version 4.6.', $host));
         }
         // @codeCoverageIgnoreEnd
 
