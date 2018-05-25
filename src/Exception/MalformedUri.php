@@ -18,6 +18,6 @@ declare(strict_types=1);
 
 namespace League\Uri\Exception;
 
-class MalformedUri extends FailedUriParsing
+class MalformedUri extends InvalidUri
 {
 }
