@@ -711,6 +711,20 @@ class ParserTest extends TestCase
                     'fragment' => 'f',
                 ],
             ],
+            'URI with 0 leading port' => [
+                'scheme://user:pass@host:000000000081/path?query#fragment',
+                [
+                    'scheme' => 'scheme',
+                    'user' => 'user',
+                    'pass' => 'pass',
+                    'host' => 'host',
+                    'port' => 81,
+                    'path' => '/path',
+                    'query' => 'query',
+                    'fragment' => 'fragment',
+                ],
+            ],
+
         ];
     }
 

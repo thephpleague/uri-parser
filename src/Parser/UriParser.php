@@ -287,7 +287,7 @@ final class UriParser
      */
     private static function parseAuthority(string $authority): array
     {
-        $components = ['host' => ''];
+        $components = ['user' => null, 'pass' => null, 'host' => '', 'port' => null];
         if ('' === $authority) {
             return $components;
         }
@@ -299,16 +299,35 @@ final class UriParser
 
         \preg_match(self::REGEXP_HOST_PORT, $parts[1] ?? $parts[0], $matches);
         $matches += ['port' => ''];
-        $port = '' === $matches['port'] ? null : \filter_var($matches['port'], \FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
-        self::filterHost($matches['host']);
-        if (false !== $port) {
-            $components['port'] = $port;
-            $components['host'] = $matches['host'];
 
-            return $components;
+        $components['port'] = self::filterPort($matches['port']);
+        $components['host'] = self::filterHost($matches['host']);
+
+        return $components;
+    }
+
+    /**
+     * Filter and format the port component.
+     *
+     * @see https://tools.ietf.org/html/rfc3986#section-3.2.2
+     *
+     * @param string $port
+     *
+     * @throws MalformedUri if the registered name is invalid
+     *
+     * @return null|int
+     */
+    private static function filterPort(string $port)
+    {
+        if ('' === $port) {
+            return null;
         }
 
-        throw new MalformedUri(\sprintf('The port `%s` is invalid', $matches['port']));
+        if (\preg_match('/^\d*$/', $port)) {
+            return (int) $port;
+        }
+
+        throw new MalformedUri(\sprintf('The port `%s` is invalid', $port));
     }
 
     /**
@@ -319,11 +338,13 @@ final class UriParser
      * @param string $host
      *
      * @throws MalformedUri if the registered name is invalid
+     *
+     * @return string
      */
-    private static function filterHost(string $host)
+    private static function filterHost(string $host): string
     {
         if ('' === $host) {
-            return;
+            return $host;
         }
 
         if ('[' !== $host[0] || ']' !== \substr($host, -1)) {
@@ -344,12 +365,14 @@ final class UriParser
      *
      * @throws MalformedUri      if the registered name is invalid
      * @throws MissingIdnSupport if IDN support or ICU requirement are not available or met.
+     *
+     * @return string
      */
-    private static function filterRegisteredName(string $host)
+    private static function filterRegisteredName(string $host): string
     {
         $host = \rawurldecode($host);
         if (\preg_match(self::REGEXP_REGISTERED_NAME, $host)) {
-            return;
+            return $host;
         }
 
         //to test IDN host non-ascii characters must be present in the host
@@ -369,7 +392,7 @@ final class UriParser
 
         \idn_to_ascii($host, \IDNA_NONTRANSITIONAL_TO_ASCII, \INTL_IDNA_VARIANT_UTS46, $arr);
         if (0 === $arr['errors']) {
-            return;
+            return $host;
         }
 
         throw new MalformedUri(\sprintf('Host `%s` is not a valid IDN host : %s', $host, self::getIDNAErrors($arr['errors'])));
