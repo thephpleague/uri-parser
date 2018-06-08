@@ -355,6 +355,8 @@ final class UriParser
             throw new MalformedUri(\sprintf('Host `%s` is invalid : the IP host is malformed', $host));
         }
 
+        return [];
+
         return $host;
     }
 
