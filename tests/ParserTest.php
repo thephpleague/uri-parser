@@ -745,6 +745,7 @@ class ParserTest extends TestCase
             'invalid path' => ['://host:80/p?q#f'],
             'invalid port (1)' => ['//host:port/path?query#fragment'],
             'invalid port (2)' => ['//host:-892358/path?query#fragment'],
+            'invalid host' => ['http://exam ple.com'],
             'invalid ipv6 host (1)' => ['scheme://[127.0.0.1]/path?query#fragment'],
             'invalid ipv6 host (2)' => ['scheme://]::1[/path?query#fragment'],
             'invalid ipv6 host (3)' => ['scheme://[::1|/path?query#fragment'],

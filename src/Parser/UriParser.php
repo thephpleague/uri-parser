@@ -354,6 +354,8 @@ final class UriParser
         if (!self::isIpHost(\substr($host, 1, -1))) {
             throw new MalformedUri(\sprintf('Host `%s` is invalid : the IP host is malformed', $host));
         }
+
+        return $host;
     }
 
     /**
