@@ -760,7 +760,8 @@ class ParserTest extends TestCase
             'invalid ipvfuture' => ['//[v6.::1]/p?q#f'],
             'invalid RFC3987 host' => ['//a⒈com/p?q#f'],
             'invalid RFC3987 host URL encoded' => ['//'.\rawurlencode('a⒈com').'/p?q#f'],
-
+            'invalid Host with fullwith (1)' =>  ['http://％００.com'],
+            'invalid host with fullwidth escaped' =>   ['http://%ef%bc%85%ef%bc%94%ef%bc%91.com],'],
         ];
     }
 

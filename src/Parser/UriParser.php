@@ -373,6 +373,7 @@ final class UriParser
     private static function filterRegisteredName(string $host): string
     {
         $host = \rawurldecode($host);
+
         if (\preg_match(self::REGEXP_REGISTERED_NAME, $host)) {
             return $host;
         }
@@ -392,8 +393,8 @@ final class UriParser
         }
         // @codeCoverageIgnoreEnd
 
-        \idn_to_ascii($host, \IDNA_NONTRANSITIONAL_TO_ASCII, \INTL_IDNA_VARIANT_UTS46, $arr);
-        if (0 === $arr['errors']) {
+        $retval = \idn_to_ascii($host, \IDNA_NONTRANSITIONAL_TO_ASCII, \INTL_IDNA_VARIANT_UTS46, $arr);
+        if (0 === $arr['errors'] && false === \strpos($retval, '%')) {
             return $host;
         }
 
