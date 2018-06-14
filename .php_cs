@@ -32,7 +32,6 @@ return PhpCsFixer\Config::create()
             'location' => 'after_open',
             'separate' => 'both',
         ],
-        'native_function_invocation' => true,
         'new_with_braces' => true,
         'no_blank_lines_after_phpdoc' => true,
         'no_empty_phpdoc' => true,

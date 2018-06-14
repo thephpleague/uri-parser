@@ -22,12 +22,29 @@ use League\Uri\Exception\InvalidUri;
 use League\Uri\Exception\MalformedUri;
 use TypeError;
 
+use function array_merge;
+use function defined;
+use function explode;
+use function filter_var;
+use function function_exists;
+use function gettype;
+use function idn_to_ascii;
+use function implode;
+use function inet_pton;
+use function is_scalar;
+use function method_exists;
+use function preg_match;
+use function rawurldecode;
+use function sprintf;
+use function strpos;
+use function substr;
+
 /**
  * A class to parse a URI string according to RFC3986.
  *
  * @internal
  *
- * use the League\Uri\parse and League\Uri\is_host functions instead
+ * use the League\Uri\parse function instead
  *
  * @see     https://tools.ietf.org/html/rfc3986
  * @package League\Uri
@@ -36,13 +53,6 @@ use TypeError;
  */
 final class UriParser
 {
-    /**
-     * @codeCoverageIgnore
-     */
-    private function __construct()
-    {
-    }
-
     /**
      * @internal
      *
@@ -216,18 +226,18 @@ final class UriParser
      */
     public static function parse($uri): array
     {
-        if (!\is_scalar($uri) && !\method_exists($uri, '__toString')) {
-            throw new TypeError(\sprintf('The uri must be a scalar or a stringable object `%s` given', \gettype($uri)));
+        if (!is_scalar($uri) && !method_exists($uri, '__toString')) {
+            throw new TypeError(sprintf('The uri must be a scalar or a stringable object `%s` given', gettype($uri)));
         }
 
         $uri = (string) $uri;
 
         if (isset(self::URI_SCHORTCUTS[$uri])) {
-            return \array_merge(self::URI_COMPONENTS, self::URI_SCHORTCUTS[$uri]);
+            return array_merge(self::URI_COMPONENTS, self::URI_SCHORTCUTS[$uri]);
         }
 
-        if (\preg_match(self::REGEXP_INVALID_URI_CHARS, $uri)) {
-            throw new MalformedUri(\sprintf('The uri `%s` contains invalid characters', $uri));
+        if (preg_match(self::REGEXP_INVALID_URI_CHARS, $uri)) {
+            throw new MalformedUri(sprintf('The uri `%s` contains invalid characters', $uri));
         }
 
         //if the first character is a known URI delimiter parsing can be simplified
@@ -236,7 +246,7 @@ final class UriParser
         //The URI is made of the fragment only
         if ('#' === $first_char) {
             $components = self::URI_COMPONENTS;
-            list(, $components['fragment']) = \explode('#', $uri, 2);
+            list(, $components['fragment']) = explode('#', $uri, 2);
 
             return $components;
         }
@@ -244,25 +254,25 @@ final class UriParser
         //The URI is made of the query and fragment
         if ('?' === $first_char) {
             $components = self::URI_COMPONENTS;
-            list(, $partial) = \explode('?', $uri, 2);
-            list($components['query'], $components['fragment']) = \explode('#', $partial, 2) + [1 => null];
+            list(, $partial) = explode('?', $uri, 2);
+            list($components['query'], $components['fragment']) = explode('#', $partial, 2) + [1 => null];
 
             return $components;
         }
 
         //use RFC3986 URI regexp to split the URI
-        \preg_match(self::REGEXP_URI_PARTS, $uri, $parts);
+        preg_match(self::REGEXP_URI_PARTS, $uri, $parts);
         $parts += ['query' => '', 'fragment' => ''];
 
-        if (':' === $parts['scheme'] || !\preg_match(self::REGEXP_URI_SCHEME, $parts['scontent'])) {
-            throw new MalformedUri(\sprintf('The uri `%s` contains an invalid scheme', $uri));
+        if (':' === $parts['scheme'] || !preg_match(self::REGEXP_URI_SCHEME, $parts['scontent'])) {
+            throw new MalformedUri(sprintf('The uri `%s` contains an invalid scheme', $uri));
         }
 
-        if ('' === $parts['scheme'].$parts['authority'] && \preg_match(self::REGEXP_INVALID_PATH, $parts['path'])) {
-            throw new MalformedUri(\sprintf('The uri `%s` contains an invalid path.', $uri));
+        if ('' === $parts['scheme'].$parts['authority'] && preg_match(self::REGEXP_INVALID_PATH, $parts['path'])) {
+            throw new MalformedUri(sprintf('The uri `%s` contains an invalid path.', $uri));
         }
 
-        return \array_merge(
+        return array_merge(
             self::URI_COMPONENTS,
             '' === $parts['authority'] ? [] : self::parseAuthority($parts['acontent']),
             [
@@ -292,12 +302,12 @@ final class UriParser
             return $components;
         }
 
-        $parts = \explode('@', $authority, 2);
+        $parts = explode('@', $authority, 2);
         if (isset($parts[1])) {
-            list($components['user'], $components['pass']) = \explode(':', $parts[0], 2) + [1 => null];
+            list($components['user'], $components['pass']) = explode(':', $parts[0], 2) + [1 => null];
         }
 
-        \preg_match(self::REGEXP_HOST_PORT, $parts[1] ?? $parts[0], $matches);
+        preg_match(self::REGEXP_HOST_PORT, $parts[1] ?? $parts[0], $matches);
         $matches += ['port' => ''];
 
         $components['port'] = self::filterPort($matches['port']);
@@ -323,11 +333,11 @@ final class UriParser
             return null;
         }
 
-        if (\preg_match('/^\d*$/', $port)) {
+        if (preg_match('/^\d*$/', $port)) {
             return (int) $port;
         }
 
-        throw new MalformedUri(\sprintf('The port `%s` is invalid', $port));
+        throw new MalformedUri(sprintf('The port `%s` is invalid', $port));
     }
 
     /**
@@ -347,15 +357,13 @@ final class UriParser
             return $host;
         }
 
-        if ('[' !== $host[0] || ']' !== \substr($host, -1)) {
+        if ('[' !== $host[0] || ']' !== substr($host, -1)) {
             return self::filterRegisteredName($host);
         }
 
-        if (!self::isIpHost(\substr($host, 1, -1))) {
-            throw new MalformedUri(\sprintf('Host `%s` is invalid : the IP host is malformed', $host));
+        if (!self::isIpHost(substr($host, 1, -1))) {
+            throw new MalformedUri(sprintf('Host `%s` is invalid : the IP host is malformed', $host));
         }
-
-        return [];
 
         return $host;
     }
@@ -374,33 +382,33 @@ final class UriParser
      */
     private static function filterRegisteredName(string $host): string
     {
-        $host = \rawurldecode($host);
+        $host = rawurldecode($host);
 
-        if (\preg_match(self::REGEXP_REGISTERED_NAME, $host)) {
+        if (preg_match(self::REGEXP_REGISTERED_NAME, $host)) {
             return $host;
         }
 
         //to test IDN host non-ascii characters must be present in the host
-        if (!\preg_match(self::REGEXP_IDN_PATTERN, $host)) {
-            throw new MalformedUri(\sprintf('Host `%s` is invalid : the host is not a valid registered name', $host));
+        if (!preg_match(self::REGEXP_IDN_PATTERN, $host)) {
+            throw new MalformedUri(sprintf('Host `%s` is invalid : the host is not a valid registered name', $host));
         }
 
         // @codeCoverageIgnoreStart
         // added because it is not possible in travis to disabled the ext/intl extension
         // see travis issue https://github.com/travis-ci/travis-ci/issues/4701
         static $idn_support = null;
-        $idn_support = $idn_support ?? \function_exists('\idn_to_ascii') && \defined('\INTL_IDNA_VARIANT_UTS46');
+        $idn_support = $idn_support ?? function_exists('idn_to_ascii') && defined('\INTL_IDNA_VARIANT_UTS46');
         if (!$idn_support) {
-            throw new InvalidUri(\sprintf('the host `%s` could not be processed for IDN. Verify that ext/intl is installed for IDN support and that ICU is at least version 4.6.', $host));
+            throw new InvalidUri(sprintf('the host `%s` could not be processed for IDN. Verify that ext/intl is installed for IDN support and that ICU is at least version 4.6.', $host));
         }
         // @codeCoverageIgnoreEnd
 
-        $retval = \idn_to_ascii($host, \IDNA_NONTRANSITIONAL_TO_ASCII, \INTL_IDNA_VARIANT_UTS46, $arr);
-        if (0 === $arr['errors'] && false === \strpos($retval, '%')) {
+        $retval = idn_to_ascii($host, IDNA_NONTRANSITIONAL_TO_ASCII, INTL_IDNA_VARIANT_UTS46, $arr);
+        if (0 === $arr['errors'] && false === strpos($retval, '%')) {
             return $host;
         }
 
-        throw new MalformedUri(\sprintf('Host `%s` is not a valid IDN host : %s', $host, self::getIDNAErrors($arr['errors'])));
+        throw new MalformedUri(sprintf('Host `%s` is not a valid IDN host : %s', $host, self::getIDNAErrors($arr['errors'])));
     }
 
     /**
@@ -440,7 +448,7 @@ final class UriParser
             }
         }
 
-        return empty($res) ? 'Unknown IDNA conversion error.' : \implode(', ', $res).'.';
+        return empty($res) ? 'Unknown IDNA conversion error.' : implode(', ', $res).'.';
     }
 
     /**
@@ -456,24 +464,24 @@ final class UriParser
      */
     private static function isIpHost(string $ip_host): bool
     {
-        if (\filter_var($ip_host, \FILTER_VALIDATE_IP, \FILTER_FLAG_IPV6)) {
+        if (filter_var($ip_host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
             return true;
         }
 
-        if (\preg_match(self::REGEXP_IP_FUTURE, $ip_host, $matches)) {
-            return !\in_array($matches['version'], ['4', '6'], true);
+        if (preg_match(self::REGEXP_IP_FUTURE, $ip_host, $matches)) {
+            return !in_array($matches['version'], ['4', '6'], true);
         }
 
-        if (false === ($pos = \strpos($ip_host, '%')) || \preg_match(
+        if (false === ($pos = strpos($ip_host, '%')) || preg_match(
             self::REGEXP_INVALID_HOST_CHARS,
-            \rawurldecode(\substr($ip_host, $pos))
+            rawurldecode(substr($ip_host, $pos))
         )) {
             return false;
         }
 
-        $ip_host = \substr($ip_host, 0, $pos);
+        $ip_host = substr($ip_host, 0, $pos);
 
-        return \filter_var($ip_host, \FILTER_VALIDATE_IP, \FILTER_FLAG_IPV6) &&
-            (\substr(\inet_pton($ip_host) & self::ZONE_ID_ADDRESS_BLOCK, 0, 2)) === self::ZONE_ID_ADDRESS_BLOCK;
+        return filter_var($ip_host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) &&
+            (substr(inet_pton($ip_host) & self::ZONE_ID_ADDRESS_BLOCK, 0, 2)) === self::ZONE_ID_ADDRESS_BLOCK;
     }
 }
