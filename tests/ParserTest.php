@@ -17,30 +17,27 @@
 namespace LeagueTest\Uri\Parser;
 
 use League\Uri\Exception\MalformedUri;
+use League\Uri\Parser\RFC3986;
 use PHPUnit\Framework\TestCase;
 use TypeError;
-use function League\Uri\build;
-use function League\Uri\parse;
 
 class ParserTest extends TestCase
 {
-    public function testParserFailedWithWrongArgumentType()
+    public function testParserFailedWithWrongArgumentType(): void
     {
-        $this->expectException(TypeError::class);
-        parse(['scheme://user:pass@host:81/path?query#fragment']);
+        self::expectException(TypeError::class);
+        RFC3986::parse(['scheme://user:pass@host:81/path?query#fragment']);
     }
 
     /**
      * @dataProvider validUriProvider
-     * @param string $uri
-     * @param array  $expected
      */
-    public function testParseSucced($uri, $expected)
+    public function testParseSucced(string $uri, array $expected): void
     {
-        $this->assertSame($expected, parse($uri));
+        self::assertSame($expected, RFC3986::parse($uri));
     }
 
-    public function validUriProvider()
+    public function validUriProvider(): array
     {
         return [
             'complete URI' => [
@@ -730,15 +727,14 @@ class ParserTest extends TestCase
 
     /**
      * @dataProvider invalidUriProvider
-     * @param string $uri
      */
-    public function testParseFailed($uri)
+    public function testParseFailed(string $uri): void
     {
-        $this->expectException(MalformedUri::class);
-        parse($uri);
+        self::expectException(MalformedUri::class);
+        RFC3986::parse($uri);
     }
 
-    public function invalidUriProvider()
+    public function invalidUriProvider(): array
     {
         return [
             'invalid scheme' => ['0scheme://host/path?query#fragment'],
@@ -767,15 +763,13 @@ class ParserTest extends TestCase
 
     /**
      * @dataProvider buildUriProvider
-     * @param string $uri
-     * @param string $expected
      */
-    public function testBuild($uri, $expected)
+    public function testBuild(string $uri, string $expected): void
     {
-        $this->assertSame($expected, build(parse($uri)));
+        self::assertSame($expected, RFC3986::build(RFC3986::parse($uri)));
     }
 
-    public function buildUriProvider()
+    public function buildUriProvider(): array
     {
         return [
             'complete URI' => [
