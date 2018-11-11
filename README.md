@@ -52,6 +52,12 @@ Documentation
 
 ### URI Parsing
 
+~~~php
+<?php
+
+public static function RFC3986::parse($uri): array
+~~~
+
 The `RFC3986::parse` static method is a drop-in replacement to PHP's `parse_url` function, with the following differences:
 
 #### The parser is RFC3986/RFC3987 compliant
