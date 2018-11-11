@@ -18,7 +18,7 @@ declare(strict_types=1);
 
 namespace League\Uri;
 
-use League\Uri\Parser\UriParser;
+use League\Uri\Parser\RFC3986;
 
 /**
  * Parse an URI string into its components.
@@ -28,7 +28,7 @@ use League\Uri\Parser\UriParser;
  *
  * @see https://tools.ietf.org/html/rfc3986
  * @see https://tools.ietf.org/html/rfc3986#section-2
- * @see UriParser::parse()
+ * @see RFC3986::parse()
  *
  * @param mixed $uri
  *
@@ -36,7 +36,7 @@ use League\Uri\Parser\UriParser;
  */
 function parse($uri): array
 {
-    return UriParser::parse($uri);
+    return RFC3986::parse($uri);
 }
 
 /**
@@ -51,6 +51,7 @@ function parse($uri): array
  *
  * @see https://tools.ietf.org/html/rfc3986#section-5.3
  * @see https://tools.ietf.org/html/rfc3986#section-7.5
+ * @see RFC3986::build()
  *
  * @param array $components
  *
@@ -58,31 +59,5 @@ function parse($uri): array
  */
 function build(array $components): string
 {
-    $uri = $components['path'] ?? '';
-    if (isset($components['query'])) {
-        $uri .= '?'.$components['query'];
-    }
-
-    if (isset($components['fragment'])) {
-        $uri .= '#'.$components['fragment'];
-    }
-
-    if (isset($components['host'])) {
-        $authority = $components['host'];
-        if (isset($components['port'])) {
-            $authority .= ':'.$components['port'];
-        }
-
-        if (isset($components['user'])) {
-            $authority = $components['user'].'@'.$authority;
-        }
-
-        $uri = '//'.$authority.$uri;
-    }
-
-    if (isset($components['scheme'])) {
-        return $components['scheme'].':'.$uri;
-    }
-
-    return $uri;
+    return RFC3986::build($components);
 }

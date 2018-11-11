@@ -51,7 +51,7 @@ use function substr;
  * @author  Ignace Nyamagana Butera <nyamsprod@gmail.com>
  * @since   0.1.0
  */
-final class UriParser
+final class RFC3986
 {
     /**
      * @internal
@@ -179,6 +179,55 @@ final class UriParser
      * let's detect the link local significant 10 bits
      */
     const ZONE_ID_ADDRESS_BLOCK = "\xfe\x80";
+
+    /**
+     * Generate an URI string representation from its parsed representation
+     * returned by League\Uri\parse() or PHP's parse_url.
+     *
+     * If you supply your own array, you are responsible for providing
+     * valid components without their URI delimiters.
+     *
+     * For security reasons the password (pass) component has been deprecated
+     * as per RFC3986 and is never returned in the URI string
+     *
+     * @see https://tools.ietf.org/html/rfc3986#section-5.3
+     * @see https://tools.ietf.org/html/rfc3986#section-7.5
+     *
+     * @param array $components
+     *
+     * @return string
+     */
+    public static function build(array $components): string
+    {
+        $uri = $components['path'] ?? '';
+        if (isset($components['query'])) {
+            $uri .= '?'.$components['query'];
+        }
+
+        if (isset($components['fragment'])) {
+            $uri .= '#'.$components['fragment'];
+        }
+
+        if (isset($components['host'])) {
+            $authority = $components['host'];
+            if (isset($components['port'])) {
+                $authority .= ':'.$components['port'];
+            }
+
+            if (isset($components['user'])) {
+                $authority = $components['user'].'@'.$authority;
+            }
+
+            $uri = '//'.$authority.$uri;
+        }
+
+        if (isset($components['scheme'])) {
+            return $components['scheme'].':'.$uri;
+        }
+
+        return $uri;
+    }
+
 
     /**
      * Parse an URI string into its components.
