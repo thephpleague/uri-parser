@@ -40,6 +40,19 @@ class ParserTest extends TestCase
     public function validUriProvider(): array
     {
         return [
+            'uri with host ascii version' => [
+                'scheme://user:pass@xn--mgbh0fb.xn--kgbechtv',
+                [
+                    'scheme' => 'scheme',
+                    'user' => 'user',
+                    'pass' => 'pass',
+                    'host' => 'xn--mgbh0fb.xn--kgbechtv',
+                    'port' => null,
+                    'path' => '',
+                    'query' => null,
+                    'fragment' => null,
+                ],
+            ],
             'complete URI' => [
                 'scheme://user:pass@host:81/path?query#fragment',
                 [
@@ -757,7 +770,8 @@ class ParserTest extends TestCase
             'invalid RFC3987 host' => ['//a⒈com/p?q#f'],
             'invalid RFC3987 host URL encoded' => ['//'.\rawurlencode('a⒈com').'/p?q#f'],
             'invalid Host with fullwith (1)' =>  ['http://％００.com'],
-            'invalid host with fullwidth escaped' =>   ['http://%ef%bc%85%ef%bc%94%ef%bc%91.com],'],
+            'invalid host with fullwidth escaped' =>  ['http://%ef%bc%85%ef%bc%94%ef%bc%91.com],'],
+            'invalid pseudo IDN to ASCII string' => ['http://xn--3/foo.'],
         ];
     }
 
