@@ -788,15 +788,15 @@ class ParserTest extends TestCase
         return [
             'complete URI' => [
                 'scheme://user:pass@host:81/path?query#fragment',
-                'scheme://user@host:81/path?query#fragment',
+                'scheme://user:pass@host:81/path?query#fragment',
             ],
             'URI is not normalized' => [
                 'ScheMe://user:pass@HoSt:81/path?query#fragment',
-                'ScheMe://user@HoSt:81/path?query#fragment',
+                'ScheMe://user:pass@HoSt:81/path?query#fragment',
             ],
             'URI without scheme' => [
                 '//user:pass@HoSt:81/path?query#fragment',
-                '//user@HoSt:81/path?query#fragment',
+                '//user:pass@HoSt:81/path?query#fragment',
             ],
             'URI without empty authority only' => [
                 '//',
@@ -812,11 +812,11 @@ class ParserTest extends TestCase
             ],
             'URI without port' => [
                 'scheme://user:pass@host/path?query#fragment',
-                'scheme://user@host/path?query#fragment',
+                'scheme://user:pass@host/path?query#fragment',
             ],
             'URI with an empty port' => [
                 'scheme://user:pass@host:/path?query#fragment',
-                'scheme://user@host/path?query#fragment',
+                'scheme://user:pass@host/path?query#fragment',
             ],
             'URI without user info and port' => [
                 'scheme://host/path?query#fragment',
@@ -920,11 +920,11 @@ class ParserTest extends TestCase
             ],
             'complex authority' => [
                 'http://a_.!~*\'(-)n0123Di%25%26:pass;:&=+$,word@www.zend.com',
-                'http://a_.!~*\'(-)n0123Di%25%26@www.zend.com',
+                'http://a_.!~*\'(-)n0123Di%25%26:pass;:&=+$,word@www.zend.com',
             ],
             'complex authority without scheme' => [
                 '//a_.!~*\'(-)n0123Di%25%26:pass;:&=+$,word@www.zend.com',
-                '//a_.!~*\'(-)n0123Di%25%26@www.zend.com',
+                '//a_.!~*\'(-)n0123Di%25%26:pass;:&=+$,word@www.zend.com',
             ],
             'single word is a path' => [
                 'http',

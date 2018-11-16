@@ -179,43 +179,46 @@ final class RFC3986
      * If you supply your own array, you are responsible for providing
      * valid components without their URI delimiters.
      *
-     * For security reasons the password (pass) component has been deprecated
-     * as per RFC3986 and is never returned in the URI string
-     *
      * @see https://tools.ietf.org/html/rfc3986#section-5.3
      * @see https://tools.ietf.org/html/rfc3986#section-7.5
      */
     public static function build(array $components): string
     {
-        $uri = $components['path'] ?? '';
+        $result = $components['path'] ?? '';
         if (isset($components['query'])) {
-            $uri .= '?'.$components['query'];
+            $result .= '?'.$components['query'];
         }
 
         if (isset($components['fragment'])) {
-            $uri .= '#'.$components['fragment'];
+            $result .= '#'.$components['fragment'];
         }
 
-        if (isset($components['host'])) {
-            $authority = $components['host'];
-            if (isset($components['port'])) {
-                $authority .= ':'.$components['port'];
-            }
-
-            if (isset($components['user'])) {
-                $authority = $components['user'].'@'.$authority;
-            }
-
-            $uri = '//'.$authority.$uri;
-        }
-
+        $scheme = null;
         if (isset($components['scheme'])) {
-            return $components['scheme'].':'.$uri;
+            $scheme = $components['scheme'].':';
         }
 
-        return $uri;
-    }
+        if (!isset($components['host'])) {
+            return $scheme.$result;
+        }
 
+        $scheme .= '//';
+        $authority = $components['host'];
+        if (isset($components['port'])) {
+            $authority .= ':'.$components['port'];
+        }
+
+        if (!isset($components['user'])) {
+            return $scheme.$authority.$result;
+        }
+
+        $authority = '@'.$authority;
+        if (!isset($components['pass'])) {
+            return $scheme.$components['user'].$authority.$result;
+        }
+
+        return $scheme.$components['user'].':'.$components['pass'].$authority.$result;
+    }
 
     /**
      * Parse an URI string into its components.

@@ -3,3 +3,4 @@ build
 docs
 composer.lock
 .idea
+.php_cs.cache
