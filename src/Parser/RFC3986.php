@@ -112,7 +112,7 @@ final class RFC3986
      *
      * URI scheme regular expresssion
      */
-    private const REGEXP_URI_SCHEME = '/^([a-z][a-z\+\.\-]*)?$/i';
+    private const REGEXP_URI_SCHEME = '/^([a-z][a-z\d\+\.\-]*)?$/i';
 
     /**
      * @see https://tools.ietf.org/html/rfc3986#section-3.2.2
