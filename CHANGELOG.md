@@ -2,6 +2,25 @@
 
 All Notable changes to `league-uri-parser` will be documented in this file
 
+## 1.4.1 - 2018-11-22
+
+### Added
+
+- None
+
+### Fixed
+
+- Improve Scheme parsing according to RFC3986 see [#19](https://github.com/thephpleague/uri-parser/issues/19)
+- `Parser` throws an `UnexpectedValueException` if the Intl extension is misconfigured on the PHP platform.
+
+### Deprecated
+
+- None
+
+### Removed
+
+- None
+
 ## 1.4.0 - 2018-03-14
 
 ### Added

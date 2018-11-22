@@ -1,17 +1,17 @@
 <?php
+
 /**
- * League.Uri (http://uri.thephpleague.com)
+ * League.Uri (http://uri.thephpleague.com/parser).
  *
- * @package    League\Uri
- * @subpackage League\Uri\Parser
- * @author     Ignace Nyamagana Butera <nyamsprod@gmail.com>
- * @license    https://github.com/thephpleague/uri-parser/blob/master/LICENSE (MIT License)
- * @version    1.4.0
- * @link       https://github.com/thephpleague/uri-parser/
+ * @author  Ignace Nyamagana Butera <nyamsprod@gmail.com>
+ * @license https://github.com/thephpleague/uri-parser/blob/master/LICENSE (MIT License)
+ * @version 1.4.1
+ * @link    https://uri.thephpleague.com/parser/
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
+
 declare(strict_types=1);
 
 namespace League\Uri;
@@ -29,9 +29,7 @@ use InvalidArgumentException;
 class Exception extends InvalidArgumentException
 {
     /**
-     * Returns a new Instance from an error in URI characters
-     *
-     * @param string $uri
+     * Returns a new Instance from an error in URI characters.
      *
      * @return static
      */
@@ -41,9 +39,7 @@ class Exception extends InvalidArgumentException
     }
 
     /**
-     * Returns a new Instance from an error in URI characters
-     *
-     * @param string $uri
+     * Returns a new Instance from an error in URI characters.
      *
      * @return static
      */
@@ -53,9 +49,7 @@ class Exception extends InvalidArgumentException
     }
 
     /**
-     * Returns a new Instance from an error in Host validation
-     *
-     * @param string $host
+     * Returns a new Instance from an error in Host validation.
      *
      * @return static
      */
@@ -65,9 +59,7 @@ class Exception extends InvalidArgumentException
     }
 
     /**
-     * Returns a new Instance from an error in port validation
-     *
-     * @param string $hostname
+     * Returns a new Instance from an error in port validation.
      *
      * @return static
      */
@@ -77,7 +69,7 @@ class Exception extends InvalidArgumentException
     }
 
     /**
-     * Returns a new Instance from an error in port validation
+     * Returns a new Instance from an error in port validation.
      *
      * @param string|int $port
      *
@@ -89,9 +81,7 @@ class Exception extends InvalidArgumentException
     }
 
     /**
-     * Returns a new Instance from an error in Uri path component
-     *
-     * @param string $uri
+     * Returns a new Instance from an error in Uri path component.
      *
      * @return static
      */

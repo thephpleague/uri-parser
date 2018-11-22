@@ -1,17 +1,17 @@
 <?php
+
 /**
- * League.Uri (http://uri.thephpleague.com)
+ * League.Uri (http://uri.thephpleague.com/parser).
  *
- * @package    League\Uri
- * @subpackage League\Uri\Parser
- * @author     Ignace Nyamagana Butera <nyamsprod@gmail.com>
- * @license    https://github.com/thephpleague/uri-parser/blob/master/LICENSE (MIT License)
- * @version    1.4.0
- * @link       https://github.com/thephpleague/uri-parser/
+ * @author  Ignace Nyamagana Butera <nyamsprod@gmail.com>
+ * @license https://github.com/thephpleague/uri-parser/blob/master/LICENSE (MIT License)
+ * @version 1.4.1
+ * @link    https://uri.thephpleague.com/parser/
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
+
 declare(strict_types=1);
 
 namespace League\Uri;
@@ -21,10 +21,6 @@ namespace League\Uri;
  *
  * @see https://tools.ietf.org/html/rfc3986#section-3.2.2
  * @see Parser::isHost()
- *
- * @param string $host
- *
- * @return bool
  */
 function is_host(string $host): bool
 {
@@ -40,10 +36,6 @@ function is_host(string $host): bool
  *
  * @see https://tools.ietf.org/html/rfc3986#section-3.2.3
  * @see Parser::isPort()
- *
- * @param mixed $port
- *
- * @return bool
  */
 function is_port($port): bool
 {
@@ -59,10 +51,6 @@ function is_port($port): bool
  *
  * @see https://tools.ietf.org/html/rfc3986#section-3.1
  * @see Parser::isScheme()
- *
- * @param string $scheme
- *
- * @return bool
  */
 function is_scheme(string $scheme): bool
 {
@@ -83,11 +71,7 @@ function is_scheme(string $scheme): bool
  * @see https://tools.ietf.org/html/rfc3986#section-2
  * @see Parser::parse()
  *
- * @param string $uri
- *
  * @throws Exception if the URI contains invalid characters
- *
- * @return array
  */
 function parse(string $uri): array
 {
@@ -110,10 +94,6 @@ function parse(string $uri): array
  *
  * @see https://tools.ietf.org/html/rfc3986#section-5.3
  * @see https://tools.ietf.org/html/rfc3986#section-7.5
- *
- * @param array $components
- *
- * @return string
  */
 function build(array $components): string
 {

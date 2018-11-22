@@ -1,20 +1,22 @@
 <?php
+
 /**
- * League.Uri (http://uri.thephpleague.com)
+ * League.Uri (http://uri.thephpleague.com/parser).
  *
- * @package    League\Uri
- * @subpackage League\Uri\Parser
- * @author     Ignace Nyamagana Butera <nyamsprod@gmail.com>
- * @license    https://github.com/thephpleague/uri-parser/blob/master/LICENSE (MIT License)
- * @version    1.4.0
- * @link       https://github.com/thephpleague/uri-parser/
+ * @author  Ignace Nyamagana Butera <nyamsprod@gmail.com>
+ * @license https://github.com/thephpleague/uri-parser/blob/master/LICENSE (MIT License)
+ * @version 1.4.1
+ * @link    https://uri.thephpleague.com/parser/
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
+
 declare(strict_types=1);
 
 namespace League\Uri;
+
+use UnexpectedValueException;
 
 /**
  * A class to parse a URI string according to RFC3986.
@@ -53,26 +55,18 @@ class Parser
      * Returns whether a scheme is valid.
      *
      * @see https://tools.ietf.org/html/rfc3986#section-3.1
-     *
-     * @param string $scheme
-     *
-     * @return bool
      */
     public function isScheme(string $scheme): bool
     {
         static $pattern = '/^[a-z][a-z0-9\+\.\-]*$/i';
 
-        return '' === $scheme || preg_match($pattern, $scheme);
+        return '' === $scheme || 1 === preg_match($pattern, $scheme);
     }
 
     /**
      * Returns whether a hostname is valid.
      *
      * @see https://tools.ietf.org/html/rfc3986#section-3.2.2
-     *
-     * @param string $host
-     *
-     * @return bool
      */
     public function isHost(string $host): bool
     {
@@ -82,15 +76,11 @@ class Parser
     }
 
     /**
-     * Validate a IPv6/IPvfuture host
+     * Validate a IPv6/IPvfuture host.
      *
      * @see http://tools.ietf.org/html/rfc3986#section-3.2.2
      * @see http://tools.ietf.org/html/rfc6874#section-2
      * @see http://tools.ietf.org/html/rfc6874#section-4
-     *
-     * @param string $host
-     *
-     * @return bool
      */
     private function isIpHost(string $host): bool
     {
@@ -110,7 +100,7 @@ class Parser
                 (?<sub_delims>[!$&\'()*+,;=:])  # also include the : character
             )+
         $/ix';
-        if (preg_match($ip_future, $ip, $matches) && !in_array($matches['version'], ['4', '6'], true)) {
+        if (1 === preg_match($ip_future, $ip, $matches) && !in_array($matches['version'], ['4', '6'], true)) {
             return true;
         }
 
@@ -119,7 +109,7 @@ class Parser
         }
 
         static $gen_delims = '/[:\/?#\[\]@ ]/'; // Also includes space.
-        if (preg_match($gen_delims, rawurldecode(substr($ip, $pos)))) {
+        if (1 === preg_match($gen_delims, rawurldecode(substr($ip, $pos)))) {
             return false;
         }
 
@@ -132,21 +122,18 @@ class Parser
         //let's detect the link local significant 10 bits
         static $address_block = "\xfe\x80";
 
-        return substr(inet_pton($ip) & $address_block, 0, 2) === $address_block;
+        return 0 === strpos((string) inet_pton($ip), $address_block);
     }
 
 
     /**
-     * Returns whether the host is an IPv4 or a registered named
+     * Returns whether the host is an IPv4 or a registered named.
      *
      * @see http://tools.ietf.org/html/rfc3986#section-3.2.2
-     *
-     * @param string $host
      *
      * @throws MissingIdnSupport if the registered name contains non-ASCII characters
      *                           and IDN support or ICU requirement are not available or met.
      *
-     * @return bool
      */
     protected function isRegisteredName(string $host): bool
     {
@@ -158,39 +145,42 @@ class Parser
                 (?<reg_name>(?:(?&unreserved)|(?&sub_delims)|(?&encoded))*)
             )
             ^(?:(?&reg_name)\.)*(?&reg_name)\.?$/ix';
-        if (preg_match($reg_name, $host)) {
+        if (1 === preg_match($reg_name, $host)) {
             return true;
         }
 
         //to test IDN host non-ascii characters must be present in the host
         static $idn_pattern = '/[^\x20-\x7f]/';
-        if (!preg_match($idn_pattern, $host)) {
+        if (1 !== preg_match($idn_pattern, $host)) {
             return false;
         }
 
         static $idn_support = null;
         $idn_support = $idn_support ?? function_exists('idn_to_ascii') && defined('INTL_IDNA_VARIANT_UTS46');
-        if ($idn_support) {
-            idn_to_ascii($host, IDNA_NONTRANSITIONAL_TO_ASCII, INTL_IDNA_VARIANT_UTS46, $arr);
-
-            return 0 === $arr['errors'];
-        }
 
         // @codeCoverageIgnoreStart
         // added because it is not possible in travis to disabled the ext/intl extension
         // see travis issue https://github.com/travis-ci/travis-ci/issues/4701
-        throw new MissingIdnSupport(sprintf('the host `%s` could not be processed for IDN. Verify that ext/intl is installed for IDN support and that ICU is at least version 4.6.', $host));
+        if (!$idn_support) {
+            throw new MissingIdnSupport(sprintf('the host `%s` could not be processed for IDN. Verify that ext/intl is installed for IDN support and that ICU is at least version 4.6.', $host));
+        }
         // @codeCoverageIgnoreEnd
+
+        $ascii_host = idn_to_ascii($host, IDNA_NONTRANSITIONAL_TO_ASCII, INTL_IDNA_VARIANT_UTS46, $arr);
+
+        // @codeCoverageIgnoreStart
+        if (false === $ascii_host && 0 === $arr['errors']) {
+            throw new UnexpectedValueException(sprintf('The Intl extension is misconfigured for %s, please correct this issue before proceeding.', PHP_OS));
+        }
+        // @codeCoverageIgnoreEnd
+
+        return 0 === $arr['errors'];
     }
 
     /**
      * Returns whether a port is valid.
      *
      * @see https://tools.ietf.org/html/rfc3986#section-3.2.2
-     *
-     * @param mixed $port
-     *
-     * @return bool
      */
     public function isPort($port): bool
     {
@@ -200,7 +190,7 @@ class Parser
             return true;
         }
 
-        return (bool) preg_match($pattern, (string) $port);
+        return 1 === preg_match($pattern, (string) $port);
     }
 
     /**
@@ -208,11 +198,7 @@ class Parser
      *
      * @see Parser::parse
      *
-     * @param string $uri
-     *
      * @throws Exception if the URI contains invalid characters
-     *
-     * @return array
      */
     public function __invoke(string $uri): array
     {
@@ -256,11 +242,7 @@ class Parser
      * @see https://tools.ietf.org/html/rfc3986
      * @see https://tools.ietf.org/html/rfc3986#section-2
      *
-     * @param string $uri
-     *
      * @throws Exception if the URI contains invalid characters
-     *
-     * @return array
      */
     public function parse(string $uri): array
     {
@@ -280,7 +262,7 @@ class Parser
             return array_merge(self::URI_COMPONENTS, $simple_uri[$uri]);
         }
 
-        if (preg_match($pattern, $uri)) {
+        if (1 === preg_match($pattern, $uri)) {
             throw Exception::createFromInvalidCharacters($uri);
         }
 
@@ -335,11 +317,7 @@ class Parser
      * @see https://tools.ietf.org/html/rfc3986#section-3.2
      * @see https://tools.ietf.org/html/rfc3986#section-3.3
      *
-     * @param string $uri
-     *
      * @throws Exception If any component of the URI is invalid
-     *
-     * @return array
      */
     protected function parseSchemeSpecificPart(string $uri): array
     {
@@ -379,11 +357,7 @@ class Parser
     /**
      * Parse and validate the URI hostname.
      *
-     * @param string $hostname
-     *
      * @throws Exception If the hostname is invalid
-     *
-     * @return array
      */
     protected function parseHostname(string $hostname): array
     {
@@ -405,7 +379,7 @@ class Parser
     }
 
     /**
-     * validate the host component
+     * validate the host component.
      *
      * @param string|null $host
      *
@@ -441,7 +415,7 @@ class Parser
             return null;
         }
 
-        if (!preg_match($pattern, (string) $port)) {
+        if (1 !== preg_match($pattern, (string) $port)) {
             throw Exception::createFromInvalidPort($port);
         }
 
@@ -471,11 +445,7 @@ class Parser
      *
      * @see https://tools.ietf.org/html/rfc3986#section-3.3
      *
-     * @param string $uri
-     *
      * @throws Exception If the path component is invalid
-     *
-     * @return array
      */
     protected function parsePathQueryAndFragment(string $uri): array
     {
@@ -519,11 +489,7 @@ class Parser
      * @see Parser::parsePathQueryAndFragment
      * @see Parser::parseSchemeSpecificPart
      *
-     * @param string $uri
-     *
      * @throws Exception If the URI scheme component is empty
-     *
-     * @return array
      */
     protected function fallbackParser(string $uri): array
     {
@@ -591,8 +557,6 @@ class Parser
      * if a '%' sub delimiter is detected the label MUST be rawurldecode prior to
      * making the conversion
      *
-     * @param string $label
-     *
      * @return string|false
      */
     protected function toAscii(string $label)
@@ -608,11 +572,16 @@ class Parser
 
         static $idn_support = null;
         $idn_support = $idn_support ?? function_exists('idn_to_ascii') && defined('INTL_IDNA_VARIANT_UTS46');
-        if ($idn_support) {
-            return idn_to_ascii($label, IDNA_NONTRANSITIONAL_TO_ASCII, INTL_IDNA_VARIANT_UTS46);
+        if (!$idn_support) {
+            throw new MissingIdnSupport(sprintf('the label `%s` could not be processed for IDN. Verify that ext/intl is installed for IDN support and that ICU is at least version 4.6.', $label));
         }
 
-        throw new MissingIdnSupport(sprintf('the label `%s` could not be processed for IDN. Verify that ext/intl is installed for IDN support and that ICU is at least version 4.6.', $label));
+        $ascii_host = idn_to_ascii($label, IDNA_NONTRANSITIONAL_TO_ASCII, INTL_IDNA_VARIANT_UTS46, $arr);
+        if (false === $ascii_host && 0 === $arr['errors']) {
+            throw new UnexpectedValueException(sprintf('The Intl extension is misconfigured for %s, please correct this issue before proceeding.', PHP_OS));
+        }
+
+        return $ascii_host;
     }
 
     /**
@@ -630,8 +599,6 @@ class Parser
      * @see https://tools.ietf.org/html/rfc3986#section-3.2.2
      *
      * @param string $label
-     *
-     * @return bool
      */
     protected function isHostLabel($label): bool
     {
@@ -655,10 +622,6 @@ class Parser
      *
      * @see http://tools.ietf.org/html/rfc6874#section-2
      * @see http://tools.ietf.org/html/rfc6874#section-4
-     *
-     * @param string $ipv6
-     *
-     * @return bool
      */
     protected function isIpv6Host(string $ipv6): bool
     {
@@ -688,8 +651,6 @@ class Parser
 
         //Only the address block fe80::/10 can have a Zone ID attach to
         //let's detect the link local significant 10 bits
-        static $address_block = "\xfe\x80";
-
-        return substr(inet_pton($ipv6) & $address_block, 0, 2) === $address_block;
+        return 0 === strpos((string) inet_pton($ipv6), "\xfe\x80");
     }
 }
