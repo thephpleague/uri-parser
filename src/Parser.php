@@ -60,7 +60,7 @@ class Parser
      */
     public function isScheme(string $scheme): bool
     {
-        static $pattern = '/^[a-z][a-z\+\.\-]*$/i';
+        static $pattern = '/^[a-z][a-z0-9\+\.\-]*$/i';
 
         return '' === $scheme || preg_match($pattern, $scheme);
     }

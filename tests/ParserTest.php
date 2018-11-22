@@ -644,6 +644,19 @@ class ParserTest extends TestCase
                     'fragment' => null,
                 ],
             ],
+            'scheme with non-leading digit' => [
+                's3://somebucket/somefile.txt',
+                [
+                    'scheme' => 's3',
+                    'user' => null,
+                    'pass' => null,
+                    'host' => 'somebucket',
+                    'port' => null,
+                    'path' => '/somefile.txt',
+                    'query' => null,
+                    'fragment' => null,
+                ],
+            ],
         ];
     }
 
