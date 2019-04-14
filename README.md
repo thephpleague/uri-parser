@@ -37,7 +37,7 @@ You need:
 
 - **PHP >= 7.1.3** but the latest stable version of PHP is recommended
 
-While the library no longer requires the `ext/intl` extension, it is strongly advise to install this extension if you are dealing with URIs containing non-ASCII host. Without the extension, the parser will throw a `InvalidURI` exception when trying to parse such URI.
+While the library no longer requires the `ext/intl` extension, it is strongly recommended to install this extension if you are dealing with URIs containing non-ASCII host. Without the extension, the parser will throw a `InvalidURI` exception when trying to parse such URI.
 
 
 Installation
