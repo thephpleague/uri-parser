@@ -25,6 +25,25 @@ All Notable changes to `league-uri-parser` will be documented in this file
 - `League\Uri\is_host` function use `League\Uri\Parser\RFC398::parse` instead
 - `League\Uri\is_port` function use `League\Uri\Parser\RFC398::parse` instead
 
+## 1.4.1 - 2018-11-22
+
+### Added
+
+- None
+
+### Fixed
+
+- Improve Scheme parsing according to RFC3986 see [#19](https://github.com/thephpleague/uri-parser/issues/19)
+- `Parser` throws an `UnexpectedValueException` if the Intl extension is misconfigured on the PHP platform.
+
+### Deprecated
+
+- None
+
+### Removed
+
+- None
+
 ## 1.4.0 - 2018-03-14
 
 ### Added

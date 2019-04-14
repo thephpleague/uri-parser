@@ -1,14 +1,9 @@
 <?php
 
 /**
- * League.Uri (http://uri.thephpleague.com).
+ * League Uri Parser (https://uri.thephpleague.com)
  *
- * @package    League\Uri
- * @subpackage League\Uri\Parser
- * @author     Ignace Nyamagana Butera <nyamsprod@gmail.com>
- * @license    https://github.com/thephpleague/uri-parser/blob/master/LICENSE (MIT License)
- * @version    2.0.0
- * @link       https://github.com/thephpleague/uri-parser/
+ * (c) Ignace Nyamagana Butera <nyamsprod@gmail.com>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -283,7 +278,7 @@ final class RFC3986
 
         //The URI is made of the fragment only
         if ('#' === $first_char) {
-            list(, $fragment) = explode('#', $uri, 2);
+            [, $fragment] = explode('#', $uri, 2);
             $components = self::URI_COMPONENTS;
             $components['fragment'] = $fragment;
 
@@ -292,8 +287,8 @@ final class RFC3986
 
         //The URI is made of the query and fragment
         if ('?' === $first_char) {
-            list(, $partial) = explode('?', $uri, 2);
-            list($query, $fragment) = explode('#', $partial, 2) + [1 => null];
+            [, $partial] = explode('?', $uri, 2);
+            [$query, $fragment] = explode('#', $partial, 2) + [1 => null];
             $components = self::URI_COMPONENTS;
             $components['query'] = $query;
             $components['fragment'] = $fragment;
@@ -341,7 +336,7 @@ final class RFC3986
 
         $parts = explode('@', $authority, 2);
         if (isset($parts[1])) {
-            list($components['user'], $components['pass']) = explode(':', $parts[0], 2) + [1 => null];
+            [$components['user'], $components['pass']] = explode(':', $parts[0], 2) + [1 => null];
         }
 
         preg_match(self::REGEXP_HOST_PORT, $parts[1] ?? $parts[0], $matches);
@@ -498,7 +493,7 @@ final class RFC3986
 
         $res = [];
         foreach ($idn_errors as $error => $reason) {
-            if (1 === ($error_byte & $error)) {
+            if ($error === ($error_byte & $error)) {
                 $res[] = $reason;
             }
         }

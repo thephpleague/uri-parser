@@ -1,14 +1,9 @@
 <?php
 
 /**
- * League.Uri (http://uri.thephpleague.com).
+ * League Uri Parser (https://uri.thephpleague.com)
  *
- * @package    League\Uri
- * @subpackage League\Uri\Parser
- * @author     Ignace Nyamagana Butera <nyamsprod@gmail.com>
- * @license    https://github.com/thephpleague/uri-parser/blob/master/LICENSE (MIT License)
- * @version    2.0.0
- * @link       https://github.com/thephpleague/uri-parser/
+ * (c) Ignace Nyamagana Butera <nyamsprod@gmail.com>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -31,8 +26,10 @@ class ParserTest extends TestCase
 
     /**
      * @dataProvider validUriProvider
+     *
+     * @param mixed $uri a scalar or an object
      */
-    public function testParseSucced(string $uri, array $expected): void
+    public function testParseSucced($uri, array $expected): void
     {
         self::assertSame($expected, RFC3986::parse($uri));
     }

@@ -212,7 +212,7 @@ public static function RFC3986::build(array $components): string
 
 You can rebuild a URI from its hash representation returned by the `RFC3986::parse` method or PHP's `parse_url` function using the `RFC3986::build` public static method.  
 
-If you supply your own hash you are responsible for providing valid encoded components without their URI delimiters.
+**If you supply your own hash you are responsible for providing valid encoded components without their URI delimiters.**
 
 ~~~php
 <?php
@@ -237,9 +237,6 @@ $uri = RFC3986::build($components);
 
 echo $uri; //displays http://hello@foo.com?@bar.com/
 ~~~
-
-**The `RFC3986::build` function never output the `pass` component as suggested by [RFC3986](https://tools.ietf.org/html/rfc3986#section-7.5).**
-
 
 Testing
 -------
