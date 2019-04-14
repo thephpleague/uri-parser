@@ -4,7 +4,7 @@ League Uri Parser
 [![Build Status](https://img.shields.io/travis/thephpleague/uri-parser/master.svg?style=flat-square)](https://travis-ci.org/thephpleague/uri-parser)
 [![Latest Version](https://img.shields.io/github/release/thephpleague/uri-parser.svg?style=flat-square)](https://github.com/thephpleague/uri-parser/releases)
 
-This package contains a userland PHP uri parser and builder compliant with:
+This package contains a userland PHP URI parser and builder compliant with:
 
 - [RFC 3986](http://tools.ietf.org/html/rfc3986).
 - [RFC 3987](http://tools.ietf.org/html/rfc3987).
@@ -52,11 +52,11 @@ Documentation
 
 ### URI Parsing
 
-~~~php
+```php
 <?php
 
 public static function RFC3986::parse($uri): array
-~~~
+```
 
 The `RFC3986::parse` static method is a drop-in replacement to PHP's `parse_url` function, with the following differences:
 
@@ -204,17 +204,17 @@ var_export(RFC3986::parse($uri));
 
 ### URI Building
 
-~~~php
+```php
 <?php
 
 public static function RFC3986::build(array $components): string
-~~~
+```
 
 You can rebuild a URI from its hash representation returned by the `RFC3986::parse` method or PHP's `parse_url` function using the `RFC3986::build` public static method.  
 
 **If you supply your own hash you are responsible for providing valid encoded components without their URI delimiters.**
 
-~~~php
+```php
 <?php
 
 use League\Uri\Parser\RFC3986;
@@ -236,7 +236,7 @@ $components = RFC3986::parse($base_uri);
 $uri = RFC3986::build($components);
 
 echo $uri; //displays http://hello@foo.com?@bar.com/
-~~~
+```
 
 Testing
 -------

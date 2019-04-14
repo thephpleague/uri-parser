@@ -24,6 +24,7 @@ All Notable changes to `league-uri-parser` will be documented in this file
 - `League\Uri\is_scheme` function use `League\Uri\Parser\RFC398::parse` instead
 - `League\Uri\is_host` function use `League\Uri\Parser\RFC398::parse` instead
 - `League\Uri\is_port` function use `League\Uri\Parser\RFC398::parse` instead
+- `League\Uri\build` function use `League\Uri\Parser\RFC398::build` instead
 
 ## 1.4.1 - 2018-11-22
 
