@@ -18,5 +18,5 @@ $components = [
 ];
 
 for ($i = 0; $i < 100000; $i++) {
-    RFC3986::build($components);
+    League\Uri\Parser\RFC3986::build($components);
 }

@@ -13,5 +13,5 @@ require __DIR__.'/../src/Parser/RFC3986.php';
 
 $uri = 'https://uri.thephpleague.com/5.0';
 for ($i = 0; $i < 100000; $i++) {
-    RFC3986::parse($uri);
+    League\Uri\Parser\RFC3986::parse($uri);
 }
