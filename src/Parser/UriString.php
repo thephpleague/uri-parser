@@ -62,7 +62,7 @@ use const INTL_IDNA_VARIANT_UTS46;
  * @author  Ignace Nyamagana Butera <nyamsprod@gmail.com>
  * @since   0.1.0
  */
-final class RFC3986
+final class UriString
 {
     /**
      * default URI component values.

@@ -12,16 +12,16 @@
 namespace LeagueTest\Uri\Parser;
 
 use League\Uri\Exception\MalformedUri;
-use League\Uri\Parser\RFC3986;
+use League\Uri\Parser\UriString;
 use PHPUnit\Framework\TestCase;
 use TypeError;
 
-class ParserTest extends TestCase
+class UriStringTest extends TestCase
 {
     public function testParserFailedWithWrongArgumentType(): void
     {
         self::expectException(TypeError::class);
-        RFC3986::parse(['scheme://user:pass@host:81/path?query#fragment']);
+        UriString::parse(['scheme://user:pass@host:81/path?query#fragment']);
     }
 
     /**
@@ -31,7 +31,7 @@ class ParserTest extends TestCase
      */
     public function testParseSucced($uri, array $expected): void
     {
-        self::assertSame($expected, RFC3986::parse($uri));
+        self::assertSame($expected, UriString::parse($uri));
     }
 
     public function validUriProvider(): array
@@ -753,7 +753,7 @@ class ParserTest extends TestCase
     public function testParseFailed(string $uri): void
     {
         self::expectException(MalformedUri::class);
-        RFC3986::parse($uri);
+        UriString::parse($uri);
     }
 
     public function invalidUriProvider(): array
@@ -789,7 +789,7 @@ class ParserTest extends TestCase
      */
     public function testBuild(string $uri, string $expected): void
     {
-        self::assertSame($expected, RFC3986::build(RFC3986::parse($uri)));
+        self::assertSame($expected, UriString::build(UriString::parse($uri)));
     }
 
     public function buildUriProvider(): array

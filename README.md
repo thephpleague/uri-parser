@@ -13,9 +13,9 @@ This package contains a userland PHP URI parser and builder compliant with:
 ```php
 <?php
 
-use League\Uri\Parser\RFC3986;
+use League\Uri\Parser\UriString;
 
-var_export(RFC3986::parse('http://www.example.com/'));
+var_export(UriString::parse('http://www.example.com/'));
 //returns the following array
 //array(
 //  'scheme' => 'http',
@@ -55,19 +55,19 @@ Documentation
 ```php
 <?php
 
-public static function RFC3986::parse($uri): array
+public static function UriString::parse($uri): array
 ```
 
-The `RFC3986::parse` static method is a drop-in replacement to PHP's `parse_url` function, with the following differences:
+The `UriString::parse` static method is a drop-in replacement to PHP's `parse_url` function, with the following differences:
 
 #### The parser is RFC3986/RFC3987 compliant
 
 ```php
 <?php
 
-use League\Uri\Parser\RFC3986;
+use League\Uri\Parser\UriString;
 
-var_export(RFC3986::parse('http://foo.com?@bar.com/'));
+var_export(UriString::parse('http://foo.com?@bar.com/'));
 //returns the following array
 //array(
 //  'scheme' => 'http',
@@ -96,9 +96,9 @@ var_export(parse_url('http://foo.com?@bar.com/'));
 ```php
 <?php
 
-use League\Uri\Parser\RFC3986;
+use League\Uri\Parser\UriString;
 
-var_export(RFC3986::parse('http://www.example.com/'));
+var_export(UriString::parse('http://www.example.com/'));
 //returns the following array
 //array(
 //  'scheme' => 'http',
@@ -125,11 +125,11 @@ var_export(parse_url('http://www.example.com/'));
 ```php
 <?php
 
-use League\Uri\Parser\RFC3986;
+use League\Uri\Parser\UriString;
 
 $uri = 'http://www.example.com/';
 
-RFC3986::parse($uri)['query']; //returns null
+UriString::parse($uri)['query']; //returns null
 parse_url($uri, PHP_URL_QUERY); //returns null
 ```
 
@@ -140,11 +140,11 @@ A distinction is made between an unspecified component, which will be set to `nu
 ```php
 <?php
 
-use League\Uri\Parser\RFC3986;
+use League\Uri\Parser\UriString;
 
 $uri = 'http://www.example.com?';
 
-RFC3986::parse($uri)['query'];  //returns ''
+UriString::parse($uri)['query'];  //returns ''
 parse_url($uri, PHP_URL_QUERY); //returns null
 ```
 
@@ -155,10 +155,10 @@ Since a URI is made of at least a path component, this component is never equal 
 ```php
 <?php
 
-use League\Uri\Parser\RFC3986;
+use League\Uri\Parser\UriString;
 
 $uri = 'http://www.example.com?';
-RFC3986::parse($uri)['path'];  //returns ''
+UriString::parse($uri)['path'];  //returns ''
 parse_url($uri, PHP_URL_PATH); //returns null
 ```
 
@@ -167,10 +167,10 @@ parse_url($uri, PHP_URL_PATH); //returns null
 ```php
 <?php
 
-use League\Uri\Parser\RFC3986;
+use League\Uri\Parser\UriString;
 
 $uri = '//example.com:toto';
-RFC3986::parse($uri);
+UriString::parse($uri);
 //throw a League\Uri\Exception\InvalidURI
 
 parse_url($uri); //returns false
@@ -178,17 +178,17 @@ parse_url($uri); //returns false
 
 #### The parser is not a validator
 
-Just like `parse_url`, `RFC3986::parse` only parses and extracts components from the URI string.
+Just like `parse_url`, `UriString::parse` only parses and extracts components from the URI string.
 
 <p class="message-info">You still need to validate them against its scheme specific rules.</p>
 
 ```php
 <?php
 
-use League\Uri\Parser\RFC3986;
+use League\Uri\Parser\UriString;
 
 $uri = 'http:www.example.com';
-var_export(RFC3986::parse($uri));
+var_export(UriString::parse($uri));
 //returns the following array
 //array(
 //  'scheme' => 'http',
@@ -207,20 +207,20 @@ var_export(RFC3986::parse($uri));
 ```php
 <?php
 
-public static function RFC3986::build(array $components): string
+public static function UriString::build(array $components): string
 ```
 
-You can rebuild a URI from its hash representation returned by the `RFC3986::parse` method or PHP's `parse_url` function using the `RFC3986::build` public static method.  
+You can rebuild a URI from its hash representation returned by the `UriString::parse` method or PHP's `parse_url` function using the `UriString::build` public static method.  
 
 **If you supply your own hash you are responsible for providing valid encoded components without their URI delimiters.**
 
 ```php
 <?php
 
-use League\Uri\Parser\RFC3986;
+use League\Uri\Parser\UriString;
 
 $base_uri = 'http://hello:world@foo.com?@bar.com/';
-$components = RFC3986::parse($base_uri);
+$components = UriString::parse($base_uri);
 //returns the following array
 //array(
 //  'scheme' => 'http',
@@ -233,7 +233,7 @@ $components = RFC3986::parse($base_uri);
 //  'fragment' => null,
 //);
 
-$uri = RFC3986::build($components);
+$uri = UriString::build($components);
 
 echo $uri; //displays http://hello@foo.com?@bar.com/
 ```
