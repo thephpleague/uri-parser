@@ -744,7 +744,6 @@ class ParserTest extends TestCase
                     'fragment' => 'fragment',
                 ],
             ],
-
         ];
     }
 
