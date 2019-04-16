@@ -1,12 +1,9 @@
 <?php
 
 /**
- * League.Uri (http://uri.thephpleague.com/parser).
+ * League Uri Parser (https://uri.thephpleague.com)
  *
- * @author  Ignace Nyamagana Butera <nyamsprod@gmail.com>
- * @license https://github.com/thephpleague/uri-parser/blob/master/LICENSE (MIT License)
- * @version 1.4.1
- * @link    https://uri.thephpleague.com/parser/
+ * (c) Ignace Nyamagana Butera <nyamsprod@gmail.com>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -14,24 +11,58 @@
 
 namespace LeagueTest\Uri\Parser;
 
-use League\Uri;
+use League\Uri\Exception\MalformedUri;
+use League\Uri\Parser\UriString;
 use PHPUnit\Framework\TestCase;
+use TypeError;
 
-class ParserTest extends TestCase
+class UriStringTest extends TestCase
 {
-    /**
-     * @dataProvider validUriProvider
-     * @param string $uri
-     * @param array  $expected
-     */
-    public function testParseSucced($uri, $expected)
+    public function testParserFailedWithWrongArgumentType(): void
     {
-        $this->assertSame($expected, Uri\parse($uri));
+        self::expectException(TypeError::class);
+        UriString::parse(['scheme://user:pass@host:81/path?query#fragment']);
     }
 
-    public function validUriProvider()
+    /**
+     * @dataProvider validUriProvider
+     *
+     * @param mixed $uri a scalar or an object
+     */
+    public function testParseSucced($uri, array $expected): void
+    {
+        self::assertSame($expected, UriString::parse($uri));
+    }
+
+    public function validUriProvider(): array
     {
         return [
+            'scheme with non-leading digit' => [
+                's3://somebucket/somefile.txt',
+                [
+                    'scheme' => 's3',
+                    'user' => null,
+                    'pass' => null,
+                    'host' => 'somebucket',
+                    'port' => null,
+                    'path' => '/somefile.txt',
+                    'query' => null,
+                    'fragment' => null,
+                ],
+            ],
+            'uri with host ascii version' => [
+                'scheme://user:pass@xn--mgbh0fb.xn--kgbechtv',
+                [
+                    'scheme' => 'scheme',
+                    'user' => 'user',
+                    'pass' => 'pass',
+                    'host' => 'xn--mgbh0fb.xn--kgbechtv',
+                    'port' => null,
+                    'path' => '',
+                    'query' => null,
+                    'fragment' => null,
+                ],
+            ],
             'complete URI' => [
                 'scheme://user:pass@host:81/path?query#fragment',
                 [
@@ -656,17 +687,61 @@ class ParserTest extends TestCase
                     'fragment' => null,
                 ],
             ],
-            'scheme with non-leading digit' => [
-                's3://somebucket/somefile.txt',
+            'URI is a scalar value' => [
+                1234,
                 [
-                    'scheme' => 's3',
+                    'scheme' => null,
                     'user' => null,
                     'pass' => null,
-                    'host' => 'somebucket',
+                    'host' => null,
                     'port' => null,
-                    'path' => '/somefile.txt',
+                    'path' => '1234',
                     'query' => null,
                     'fragment' => null,
+                ],
+            ],
+            'URI is a object with __toString' => [
+                new class() {
+                    public function __toString()
+                    {
+                        return 'http://example.org/hello:12?foo=bar#test';
+                    }
+                },
+                [
+                    'scheme' => 'http',
+                    'user' => null,
+                    'pass' => null,
+                    'host' => 'example.org',
+                    'port' => null,
+                    'path' => '/hello:12',
+                    'query' => 'foo=bar',
+                    'fragment' => 'test',
+                ],
+            ],
+            'Authority is the colon' => [
+                'ftp://:/p?q#f',
+                [
+                    'scheme' => 'ftp',
+                    'user' => null,
+                    'pass' => null,
+                    'host' => '',
+                    'port' => null,
+                    'path' => '/p',
+                    'query' => 'q',
+                    'fragment' => 'f',
+                ],
+            ],
+            'URI with 0 leading port' => [
+                'scheme://user:pass@host:000000000081/path?query#fragment',
+                [
+                    'scheme' => 'scheme',
+                    'user' => 'user',
+                    'pass' => 'pass',
+                    'host' => 'host',
+                    'port' => 81,
+                    'path' => '/path',
+                    'query' => 'query',
+                    'fragment' => 'fragment',
                 ],
             ],
         ];
@@ -674,21 +749,21 @@ class ParserTest extends TestCase
 
     /**
      * @dataProvider invalidUriProvider
-     * @param string $uri
      */
-    public function testParseFailed($uri)
+    public function testParseFailed(string $uri): void
     {
-        $this->expectException(Uri\Exception::class);
-        Uri\parse($uri);
+        self::expectException(MalformedUri::class);
+        UriString::parse($uri);
     }
 
-    public function invalidUriProvider()
+    public function invalidUriProvider(): array
     {
         return [
-            'invalid scheme (1)' => ['0scheme://host/path?query#fragment'],
-            'invalid scheme (2)' => ['://host:80/p?q#f'],
+            'invalid scheme' => ['0scheme://host/path?query#fragment'],
+            'invalid path' => ['://host:80/p?q#f'],
             'invalid port (1)' => ['//host:port/path?query#fragment'],
             'invalid port (2)' => ['//host:-892358/path?query#fragment'],
+            'invalid host' => ['http://exam ple.com'],
             'invalid ipv6 host (1)' => ['scheme://[127.0.0.1]/path?query#fragment'],
             'invalid ipv6 host (2)' => ['scheme://]::1[/path?query#fragment'],
             'invalid ipv6 host (3)' => ['scheme://[::1|/path?query#fragment'],
@@ -702,118 +777,35 @@ class ParserTest extends TestCase
             'invalid path PHP bug #72811' => ['[::1]:80'],
             'invalid ipvfuture' => ['//[v6.::1]/p?q#f'],
             'invalid RFC3987 host' => ['//a⒈com/p?q#f'],
-        ];
-    }
-
-    /**
-     * @dataProvider validHostProvider
-     * @param string $host
-     * @param bool   $expected
-     */
-    public function testHost($host, $expected)
-    {
-        $this->assertSame($expected, Uri\is_host($host));
-    }
-
-    public function validHostProvider()
-    {
-        $long_label = implode('.', array_fill(0, 62, 'a'));
-
-        return [
-            'RFC3986 registered name' => ['bebe.be', true],
-            'RFC3987 registered name (1)' => ['bébé.bé', true],
-            'RFC3987 registered name (2)' => ['www._fußball.com', true],
-            'Sub-domain beginning with underscore' => ['_tcp.example.com', true],
-            'Host with urlencoded label' => ['b%C3%A9b%C3%A9.be', true],
-            'IDN host with delims' => ['www.fuß*+,;ball.com', true],
-            'IPv4 host' => ['127.0.0.1', true],
-            'IPv4 like host' => ['9.2.3', true],
-            'IPv6 host' => ['[::]', true],
-            'invalid IPv6 host (1)' => ['::1', false],
-            'invalid IPv6 host (2)' => ['[fe80::1234::%251]', false],
-            'invalid IPv6 host (3)' => ['[127.0.0.1]', false],
-            'invalid IPv6 host (4)' => [']::1[', false],
-            'invalid IPv6 host (5)' => ['[::1|', false],
-            'invalid IPv6 host (6)' => ['|::1]', false],
-            'invalid IPv6 host (7)' => ['[[::1]]', false],
-            'invalid IPv6 host (8)' => ['[::1%25%23]', false],
-            'empty host' => ['', true],
-            'host with dashes' => ['t-e-s-t.com', true],
-            'host starting with dash' => ['-test.com', true],
-            'host ending with dash' => ['test-.com', true],
-            'invalid host: host contains space' => ['re view.com', false],
-            'non idn like host #issue 5 (1)' => ['r5---sn-h0jeen7y.domain.com', true],
-            'non idn like host #issue 5 (2)' => ['tw--services.co.uk', true],
-            'non idn like host #issue 5 (3)' => ['om--tat-sat.co.uk', true],
-        ];
-    }
-
-    /**
-     * @dataProvider validPortProvider
-     * @param bool $expected
-     */
-    public function testPort($port, $expected)
-    {
-        $this->assertSame($expected, Uri\is_port($port));
-    }
-
-    public function validPortProvider()
-    {
-        return [
-            'int' => [3, true],
-            'string' => ['3', true],
-            'null' => [null, true],
-            'negative port number' => [-1, false],
-            'non-number' => ['x', false],
-        ];
-    }
-
-    /**
-     * @dataProvider validSchemeProvider
-     * @param string $scheme
-     * @param bool   $expected
-     */
-    public function testScheme($scheme, $expected)
-    {
-        $this->assertSame($expected, Uri\is_scheme($scheme));
-    }
-
-    public function validSchemeProvider()
-    {
-        return [
-            'string' => ['scheme', true],
-            'empty string' => ['', true],
-            'invalid string' => ['tété', false],
-            'with + signe' => ['svn+ssh', true],
+            'invalid RFC3987 host URL encoded' => ['//'.\rawurlencode('a⒈com').'/p?q#f'],
+            'invalid Host with fullwith (1)' =>  ['http://％００.com'],
+            'invalid host with fullwidth escaped' =>  ['http://%ef%bc%85%ef%bc%94%ef%bc%91.com],'],
+            'invalid pseudo IDN to ASCII string' => ['http://xn--3/foo.'],
         ];
     }
 
     /**
      * @dataProvider buildUriProvider
-     * @param string $uri
-     * @param string $expected
      */
-    public function testBuild($uri, $expected)
+    public function testBuild(string $uri, string $expected): void
     {
-        $uri = (new Uri\Parser())($uri);
-
-        $this->assertSame($expected, Uri\build($uri));
+        self::assertSame($expected, UriString::build(UriString::parse($uri)));
     }
 
-    public function buildUriProvider()
+    public function buildUriProvider(): array
     {
         return [
             'complete URI' => [
                 'scheme://user:pass@host:81/path?query#fragment',
-                'scheme://user@host:81/path?query#fragment',
+                'scheme://user:pass@host:81/path?query#fragment',
             ],
             'URI is not normalized' => [
                 'ScheMe://user:pass@HoSt:81/path?query#fragment',
-                'ScheMe://user@HoSt:81/path?query#fragment',
+                'ScheMe://user:pass@HoSt:81/path?query#fragment',
             ],
             'URI without scheme' => [
                 '//user:pass@HoSt:81/path?query#fragment',
-                '//user@HoSt:81/path?query#fragment',
+                '//user:pass@HoSt:81/path?query#fragment',
             ],
             'URI without empty authority only' => [
                 '//',
@@ -829,11 +821,11 @@ class ParserTest extends TestCase
             ],
             'URI without port' => [
                 'scheme://user:pass@host/path?query#fragment',
-                'scheme://user@host/path?query#fragment',
+                'scheme://user:pass@host/path?query#fragment',
             ],
             'URI with an empty port' => [
                 'scheme://user:pass@host:/path?query#fragment',
-                'scheme://user@host/path?query#fragment',
+                'scheme://user:pass@host/path?query#fragment',
             ],
             'URI without user info and port' => [
                 'scheme://host/path?query#fragment',
@@ -937,11 +929,11 @@ class ParserTest extends TestCase
             ],
             'complex authority' => [
                 'http://a_.!~*\'(-)n0123Di%25%26:pass;:&=+$,word@www.zend.com',
-                'http://a_.!~*\'(-)n0123Di%25%26@www.zend.com',
+                'http://a_.!~*\'(-)n0123Di%25%26:pass;:&=+$,word@www.zend.com',
             ],
             'complex authority without scheme' => [
                 '//a_.!~*\'(-)n0123Di%25%26:pass;:&=+$,word@www.zend.com',
-                '//a_.!~*\'(-)n0123Di%25%26@www.zend.com',
+                '//a_.!~*\'(-)n0123Di%25%26:pass;:&=+$,word@www.zend.com',
             ],
             'single word is a path' => [
                 'http',

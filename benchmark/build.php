@@ -11,8 +11,8 @@
 
 require __DIR__.'/../src/Parser/UriString.php';
 
-$uri = 'https://uri.thephpleague.com/5.0';
+$components = ['scheme' => 'http', 'host' => 'uri.thephpleague.com', 'path' => '/5.0'];
 
 for ($i = 0; $i < 100000; $i++) {
-    League\Uri\Parser\UriString::parse($uri);
+    League\Uri\Parser\UriString::build($components);
 }

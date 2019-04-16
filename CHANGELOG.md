@@ -2,6 +2,30 @@
 
 All Notable changes to `league-uri-parser` will be documented in this file
 
+## Next -TBD
+
+### Added
+
+- `League\Uri\Parser\RFC3986` to replace `League\Uri\Parser`
+
+### Fixed
+
+- Improve Parsing performance
+- The userinfo pass component is outputted by the `build` method
+
+### Deprecated
+
+- None
+
+### Removed
+
+- support for PHP7.0
+- `League\Uri\Parser` replaced by `League\Uri\Parser\RFC3986`
+- `League\Uri\is_scheme` function use `League\Uri\Parser\RFC398::parse` instead
+- `League\Uri\is_host` function use `League\Uri\Parser\RFC398::parse` instead
+- `League\Uri\is_port` function use `League\Uri\Parser\RFC398::parse` instead
+- `League\Uri\build` function use `League\Uri\Parser\RFC398::build` instead
+
 ## 1.4.1 - 2018-11-22
 
 ### Added

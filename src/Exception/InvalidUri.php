@@ -9,10 +9,12 @@
  * file that was distributed with this source code.
  */
 
-require __DIR__.'/../src/Parser/UriString.php';
+declare(strict_types=1);
 
-$uri = 'https://uri.thephpleague.com/5.0';
+namespace League\Uri\Exception;
 
-for ($i = 0; $i < 100000; $i++) {
-    League\Uri\Parser\UriString::parse($uri);
+use InvalidArgumentException;
+
+class InvalidUri extends InvalidArgumentException
+{
 }
