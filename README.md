@@ -1,10 +1,10 @@
-League Uri Parser
+URI string parser and builder
 =======
 
 [![Build Status](https://img.shields.io/travis/thephpleague/uri-parser/master.svg?style=flat-square)](https://travis-ci.org/thephpleague/uri-parser)
 [![Latest Version](https://img.shields.io/github/release/thephpleague/uri-parser.svg?style=flat-square)](https://github.com/thephpleague/uri-parser/releases)
 
-This package contains a userland PHP URI parser and builder compliant with:
+This package contains a userland PHP URI string parser and builder compliant with:
 
 - [RFC 3986](http://tools.ietf.org/html/rfc3986).
 - [RFC 3987](http://tools.ietf.org/html/rfc3987).
@@ -33,11 +33,9 @@ var_export(UriString::parse('http://www.example.com/'));
 System Requirements
 -------
 
-You need:
+You need **PHP >= 7.1.3** but the latest stable version of PHP is recommended.
 
-- **PHP >= 7.1.3** but the latest stable version of PHP is recommended
-
-While the library no longer requires the `ext/intl` extension, it is strongly recommended to install this extension if you are dealing with URIs containing non-ASCII host. Without the extension, the parser will throw a `InvalidURI` exception when trying to parse such URI.
+**While the library no longer requires the `ext/intl` extension, it is strongly recommended to install this extension if you are dealing with URIs containing non-ASCII host. Without the extension, the parser will throw a `InvalidURI` exception when trying to parse such URI.**
 
 
 Installation
@@ -50,12 +48,12 @@ $ composer require league/uri-parser
 Documentation
 ---------
 
-### URI Parsing
+### URI string parsing
 
 ```php
 <?php
 
-public static function UriString::parse($uri): array
+public static function League\Uri\Parser\UriString::parse($uri): array
 ```
 
 The `UriString::parse` static method is a drop-in replacement to PHP's `parse_url` function, with the following differences:
@@ -91,7 +89,7 @@ var_export(parse_url('http://foo.com?@bar.com/'));
 // Depending on the PHP version
 ```
 
-#### The Parser returns all URI components.
+#### The parser returns all URI components.
 
 ```php
 <?php
@@ -120,7 +118,7 @@ var_export(parse_url('http://www.example.com/'));
 //);
 ```
 
-#### No extra parameters needed
+#### The parser needs no extra parameters
 
 ```php
 <?php
@@ -133,7 +131,7 @@ UriString::parse($uri)['query']; //returns null
 parse_url($uri, PHP_URL_QUERY); //returns null
 ```
 
-#### Empty component and undefined component are not treated the same
+#### The parser treats empty and undefined components differently
 
 A distinction is made between an unspecified component, which will be set to `null` and an empty component which will be equal to the empty string.
 
@@ -148,7 +146,7 @@ UriString::parse($uri)['query'];  //returns ''
 parse_url($uri, PHP_URL_QUERY); //returns null
 ```
 
-#### The path component is never equal to `null`
+#### The returned path component is always defined
 
 Since a URI is made of at least a path component, this component is never equal to `null`
 
@@ -202,12 +200,12 @@ var_export(UriString::parse($uri));
 //);
 ```
 
-### URI Building
+### URI string building
 
 ```php
 <?php
 
-public static function UriString::build(array $components): string
+public static function League\Uri\Parser\UriString::build(array $components): string
 ```
 
 You can rebuild a URI from its hash representation returned by the `UriString::parse` method or PHP's `parse_url` function using the `UriString::build` public static method.  
