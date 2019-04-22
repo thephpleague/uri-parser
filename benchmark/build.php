@@ -9,10 +9,10 @@
  * file that was distributed with this source code.
  */
 
-require __DIR__.'/../src/Parser/UriString.php';
+require __DIR__.'/../src/UriString.php';
 
 $components = ['scheme' => 'http', 'host' => 'uri.thephpleague.com', 'path' => '/5.0'];
 
 for ($i = 0; $i < 100000; $i++) {
-    League\Uri\Parser\UriString::build($components);
+    League\Uri\UriString::build($components);
 }

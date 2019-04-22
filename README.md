@@ -13,7 +13,7 @@ This package contains a userland PHP URI string parser and builder compliant wit
 ```php
 <?php
 
-use League\Uri\Parser\UriString;
+use League\Uri\UriString;
 
 var_export(UriString::parse('http://www.example.com/'));
 //returns the following array
@@ -53,7 +53,7 @@ Documentation
 ```php
 <?php
 
-public static function League\Uri\Parser\UriString::parse($uri): array
+public static function League\Uri\UriString::parse($uri): array
 ```
 
 The `UriString::parse` static method is a drop-in replacement to PHP's `parse_url` function, with the following differences:
@@ -63,7 +63,7 @@ The `UriString::parse` static method is a drop-in replacement to PHP's `parse_ur
 ```php
 <?php
 
-use League\Uri\Parser\UriString;
+use League\Uri\UriString;
 
 var_export(UriString::parse('http://foo.com?@bar.com/'));
 //returns the following array
@@ -94,7 +94,7 @@ var_export(parse_url('http://foo.com?@bar.com/'));
 ```php
 <?php
 
-use League\Uri\Parser\UriString;
+use League\Uri\UriString;
 
 var_export(UriString::parse('http://www.example.com/'));
 //returns the following array
@@ -123,7 +123,7 @@ var_export(parse_url('http://www.example.com/'));
 ```php
 <?php
 
-use League\Uri\Parser\UriString;
+use League\Uri\UriString;
 
 $uri = 'http://www.example.com/';
 
@@ -138,7 +138,7 @@ A distinction is made between an unspecified component, which will be set to `nu
 ```php
 <?php
 
-use League\Uri\Parser\UriString;
+use League\Uri\UriString;
 
 $uri = 'http://www.example.com?';
 
@@ -153,7 +153,7 @@ Since a URI is made of at least a path component, this component is never equal 
 ```php
 <?php
 
-use League\Uri\Parser\UriString;
+use League\Uri\UriString;
 
 $uri = 'http://www.example.com?';
 UriString::parse($uri)['path'];  //returns ''
@@ -165,7 +165,7 @@ parse_url($uri, PHP_URL_PATH); //returns null
 ```php
 <?php
 
-use League\Uri\Parser\UriString;
+use League\Uri\UriString;
 
 $uri = '//example.com:toto';
 UriString::parse($uri);
@@ -183,7 +183,7 @@ Just like `parse_url`, `UriString::parse` only parses and extracts components fr
 ```php
 <?php
 
-use League\Uri\Parser\UriString;
+use League\Uri\UriString;
 
 $uri = 'http:www.example.com';
 var_export(UriString::parse($uri));
@@ -205,7 +205,7 @@ var_export(UriString::parse($uri));
 ```php
 <?php
 
-public static function League\Uri\Parser\UriString::build(array $components): string
+public static function League\Uri\UriString::build(array $components): string
 ```
 
 You can rebuild a URI from its hash representation returned by the `UriString::parse` method or PHP's `parse_url` function using the `UriString::build` public static method.  
@@ -215,7 +215,7 @@ You can rebuild a URI from its hash representation returned by the `UriString::p
 ```php
 <?php
 
-use League\Uri\Parser\UriString;
+use League\Uri\UriString;
 
 $base_uri = 'http://hello:world@foo.com?@bar.com/';
 $components = UriString::parse($base_uri);

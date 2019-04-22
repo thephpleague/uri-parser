@@ -11,7 +11,7 @@
 
 declare(strict_types=1);
 
-namespace League\Uri\Parser;
+namespace League\Uri;
 
 use League\Uri\Exception\InvalidUri;
 use League\Uri\Exception\MalformedUri;
@@ -52,10 +52,6 @@ use const INTL_IDNA_VARIANT_UTS46;
 
 /**
  * A class to parse a URI string according to RFC3986.
- *
- * @internal
- *
- * use the League\Uri\parse function instead
  *
  * @see     https://tools.ietf.org/html/rfc3986
  * @package League\Uri

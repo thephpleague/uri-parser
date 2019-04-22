@@ -9,10 +9,10 @@
  * file that was distributed with this source code.
  */
 
-namespace LeagueTest\Uri\Parser;
+namespace LeagueTest\Uri;
 
 use League\Uri\Exception\MalformedUri;
-use League\Uri\Parser\UriString;
+use League\Uri\UriString;
 use PHPUnit\Framework\TestCase;
 use TypeError;
 

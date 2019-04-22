@@ -9,10 +9,10 @@
  * file that was distributed with this source code.
  */
 
-require __DIR__.'/../src/Parser/UriString.php';
+require __DIR__.'/../src/UriString.php';
 
 $uri = 'https://uri.thephpleague.com/5.0';
 
 for ($i = 0; $i < 100000; $i++) {
-    League\Uri\Parser\UriString::parse($uri);
+    League\Uri\UriString::parse($uri);
 }
