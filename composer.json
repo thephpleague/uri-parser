@@ -45,7 +45,7 @@
         "league/uri-schemes": "Allow validating and normalizing URI parsing results"
     },
     "scripts": {
-        "phpcs": "php-cs-fixer fix -v --diff --dry-run --allow-risky=yes;",
+        "phpcs": "php-cs-fixer fix -v --diff --dry-run --allow-risky=yes",
         "phpstan-src": "phpstan analyse -l max -c phpstan.src.neon src",
         "phpstan-tests": "phpstan analyse -l max -c phpstan.tests.neon tests",
         "phpstan": [
