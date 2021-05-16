@@ -6,6 +6,8 @@ League Uri Parser
 
 This package contains a userland PHP uri parser compliant with [RFC 3986](http://tools.ietf.org/html/rfc3986).
 
+# THIS PACKAGE IS ON MAINTENANCE MODE SINCE 2019-10-18, FOR ANY NEW PROJECT PLEASE USE [league/uri v6+](https://github.com/thephpleague/uri)
+
 System Requirements
 -------
 
